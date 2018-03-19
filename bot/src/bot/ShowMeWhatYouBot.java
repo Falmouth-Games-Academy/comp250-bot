@@ -13,9 +13,9 @@ import rts.units.UnitTypeTable;
 
 /**
  *
- * @author santi
+ * @author newtoto
  */
-public class RandomAI extends AI {    
+public class ShowMeWhatYouBot extends AI {    
     public RandomAI(UnitTypeTable utt) {
     }
     
