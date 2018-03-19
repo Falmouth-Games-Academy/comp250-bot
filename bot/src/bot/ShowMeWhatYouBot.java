@@ -16,11 +16,11 @@ import rts.units.UnitTypeTable;
  * @author newtoto
  */
 public class ShowMeWhatYouBot extends AI {    
-    public RandomAI(UnitTypeTable utt) {
+    public ShowMeWhatYouBot(UnitTypeTable utt) {
     }
     
 
-    public RandomAI() {
+    public ShowMeWhatYouBot() {
     }
     
     
@@ -31,7 +31,7 @@ public class ShowMeWhatYouBot extends AI {
     
     @Override
     public AI clone() {
-        return new RandomAI();
+        return new ShowMeWhatYouBot();
     }
    
     
