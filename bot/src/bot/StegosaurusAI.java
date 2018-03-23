@@ -15,12 +15,12 @@ import rts.units.UnitTypeTable;
  *
  * @author santi
  */
-public class TriceratopsAI extends AI {    
-    public TriceratopsAI(UnitTypeTable utt) {
+public class StegosaurusAI extends AI {    
+    public StegosaurusAI(UnitTypeTable utt) {
     }
     
 
-    public TriceratopsAI() {
+    public StegosaurusAI() {
     }
     
     
@@ -31,7 +31,7 @@ public class TriceratopsAI extends AI {
     
     @Override
     public AI clone() {
-        return new TriceratopsAI();
+        return new StegosaurusAI();
     }
    
     
