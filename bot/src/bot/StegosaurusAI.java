@@ -76,7 +76,7 @@ public class StegosaurusAI extends AbstractionLayerAI
         rangedType = utt.getUnitType("Ranged");
         heavyType = utt.getUnitType("Heavy");
         
-        trainingQueue = new ArrayList <UnitType> (Arrays.asList(heavyType, lightType, rangedType));
+        trainingQueue = new ArrayList <UnitType> (Arrays.asList(heavyType, lightType, rangedType, lightType, rangedType));
         nextToTrain = trainingQueue.get(0);
         trainingQueueElement = 0;
     }   
