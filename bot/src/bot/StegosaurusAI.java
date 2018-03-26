@@ -173,7 +173,7 @@ public class StegosaurusAI extends AbstractionLayerAI
                 nworkers++;
             }
         }
-        if (nworkers < 1 && p.getResources() >= workerType.cost) 
+        if (nworkers < 4 && p.getResources() >= workerType.cost) 
         {
             train(u, workerType);
         }
@@ -181,7 +181,6 @@ public class StegosaurusAI extends AbstractionLayerAI
 
     public void barracksBehavior(Unit u, Player p, PhysicalGameState pgs) 
     {
-    	
         if (p.getResources() >= nextToTrain.cost) 
         {
             train(u, nextToTrain);
@@ -242,7 +241,7 @@ public class StegosaurusAI extends AbstractionLayerAI
         }
 
         List<Integer> reservedPositions = new LinkedList<Integer>();
-        if (nbases == 0 && !freeWorkers.isEmpty()) 
+        if (nbases <= 2 && !freeWorkers.isEmpty()) 
         {
             // build a base:
             if (p.getResources() >= baseType.cost + resourcesUsed) 
@@ -253,7 +252,7 @@ public class StegosaurusAI extends AbstractionLayerAI
             }
         }
 
-        if (nbarracks == 0) 
+        if (nbarracks <= 2) 
         {
             // build a barracks:
             if (p.getResources() >= barracksType.cost + resourcesUsed && !freeWorkers.isEmpty()) 
