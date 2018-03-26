@@ -24,10 +24,8 @@ import rts.Player;
 import rts.PlayerAction;
 import rts.units.*;
 
-/**
- *
- * @author Cristiano D'Angelo
- */
+ // @author Cristiano D'Angelo
+ 
 public class StegosaurusAI extends AbstractionLayerAI 
 {
     Random rand = new Random();
@@ -452,7 +450,7 @@ public class StegosaurusAI extends AbstractionLayerAI
         }
         if (player.getResources() == 0)
         {
-            battleWorkers.addAll(workers);
+            battleWorkers.addAll(workers); 
         } 
         else if (workers.size() > (baseCount)) 
         {
