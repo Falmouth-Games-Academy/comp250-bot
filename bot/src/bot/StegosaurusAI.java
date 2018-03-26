@@ -9,6 +9,7 @@ import ai.abstraction.AbstractionLayerAI;
 import ai.abstraction.Harvest;
 import ai.abstraction.cRush.RangedAttack;
 import ai.abstraction.pathfinding.AStarPathFinding;
+import ai.abstraction.pathfinding.FloodFillPathFinding;
 import ai.core.AI;
 import ai.abstraction.pathfinding.PathFinding;
 import ai.core.ParameterSpecification;
@@ -29,7 +30,7 @@ import rts.units.*;
  */
 public class StegosaurusAI extends AbstractionLayerAI 
 {
-    Random r = new Random();
+    Random rand = new Random();
     protected UnitTypeTable utt;
     UnitType workerType;
     UnitType baseType;
@@ -44,7 +45,7 @@ public class StegosaurusAI extends AbstractionLayerAI
 
     public StegosaurusAI(UnitTypeTable a_utt) 
     {
-        this(a_utt, new AStarPathFinding());
+        this(a_utt, new FloodFillPathFinding());//AStarPathFinding());
     }
 
     public StegosaurusAI(UnitTypeTable a_utt, PathFinding a_pf) 
@@ -82,219 +83,240 @@ public class StegosaurusAI extends AbstractionLayerAI
     int resourcesUsed = 0;
     
     
-    public PlayerAction getAction(int player, GameState gs) 
+    public PlayerAction getAction(int player, GameState gameState) 
     {
-        PhysicalGameState pgs = gs.getPhysicalGameState();
-        Player p = gs.getPlayer(player);
+        PhysicalGameState physicalGameState = gameState.getPhysicalGameState();
+        Player thisPlayer = gameState.getPlayer(player);
         boolean isRush = false;
         
-        
-        if ((pgs.getWidth() * pgs.getHeight()) <= 144)
+        if ((physicalGameState.getWidth() * physicalGameState.getHeight()) <= 144)
         {
-        	if (pgs.getWidth() == 9 && pgs.getHeight() == 8)
-        		isRush = false;
-        	else
-            isRush = true;
+        	// Temporary measure
+        	if (physicalGameState.getWidth() != 9 && physicalGameState.getHeight() != 8) isRush = true;
         }
         
 //        System.out.println("LightRushAI for player " + player + " (cycle " + gs.getTime() + ")");
 
-        List<Unit> workers = new LinkedList<Unit>();
-        for (Unit u : pgs.getUnits()) 
+        // Maybe use ArrayList for efficiency? - Check
+        List <Unit> workers = new LinkedList <Unit> ();
+        
+        // Fill workers list with player units that can harvest
+        for (Unit unit : physicalGameState.getUnits()) 
         {
-            if (u.getType().canHarvest && u.getPlayer() == player) 
+            if (unit.getType().canHarvest && unit.getPlayer() == player) 
             {
-                workers.add(u);
+                workers.add(unit);
             }
         }
+        
+        // Behaviour of workers
         if(isRush)
         {
-            rushWorkersBehavior(workers, p, pgs, gs);
+            rushWorkersBehavior(workers, thisPlayer, physicalGameState, gameState);
         } 
         else 
         {
-            workersBehavior(workers, p, pgs, gs);
+            workersBehavior(workers, thisPlayer, physicalGameState, gameState);
         }
 
-        // behaviour of bases:
-        for (Unit u : pgs.getUnits()) 
+        // behaviour of bases
+        for (Unit unit : physicalGameState.getUnits()) 
         {
-            if (u.getType() == baseType && u.getPlayer() == player && gs.getActionAssignment(u) == null) 
+            if (unit.getType() == baseType && unit.getPlayer() == player && gameState.getActionAssignment(unit) == null) 
             {
                 if(isRush)
                 {
-                    rushBaseBehavior(u, p, pgs);
+                    rushBaseBehavior(unit, thisPlayer, physicalGameState);
                 }
                 else 
                 {
-                    baseBehavior(u, p, pgs);
+                    baseBehavior(unit, thisPlayer, physicalGameState);
                 }
             }
         }
 
-        // behaviour of barracks:
-        for (Unit u : pgs.getUnits()) 
+        // behaviour of barracks
+        for (Unit unit : physicalGameState.getUnits()) 
         {
-            if (u.getType() == barracksType && u.getPlayer() == player && gs.getActionAssignment(u) == null) 
+            if (unit.getType() == barracksType && unit.getPlayer() == player && gameState.getActionAssignment(unit) == null) 
             {
-                barracksBehavior(u, p, pgs);
+                barracksBehavior(unit, thisPlayer, physicalGameState);
             }
         }
 
-        // behaviour of melee units:
-        for (Unit u : pgs.getUnits()) 
+        // behaviour of attack units
+        for (Unit unit : physicalGameState.getUnits()) 
         {
-            if (u.getType().canAttack && !u.getType().canHarvest && u.getPlayer() == player && gs.getActionAssignment(u) == null) {
-                if (u.getType() == rangedType) 
+            if (unit.getType().canAttack && !unit.getType().canHarvest && unit.getPlayer() == player && gameState.getActionAssignment(unit) == null) {
+                
+            	// Sort out ranged attack from melee attacks
+            	if (unit.getType() == rangedType) 
                 {
-                    rangedUnitBehavior(u, p, gs);
+                    rangedUnitBehavior(unit, thisPlayer, gameState);
                 } 
                 else 
                 {
-                    meleeUnitBehavior(u, p, gs);
+                    meleeUnitBehavior(unit, thisPlayer, gameState);
                 }
             }
         }
-        return translateActions(player, gs);
+        return translateActions(player, gameState);
     }
 
-    public void baseBehavior(Unit u, Player p, PhysicalGameState pgs) 
+    public void baseBehavior(Unit baseUnit, Player player, PhysicalGameState physicalGameState) 
     {
-        int nbases = 0;
-        int nbarracks = 0;
-        int nworkers = 0;
-        int resources = p.getResources();
-
-        for (Unit u2 : pgs.getUnits()) 
+        int baseCount = 0;
+        int barracksCount = 0;
+        int workerCount = 0;
+        int resources = player.getResources();
+        
+        // Update counts
+        for (Unit unit : physicalGameState.getUnits()) 
         {
-            if (u2.getType() == workerType && u2.getPlayer() == p.getID()) 
+            if (unit.getType() == workerType && unit.getPlayer() == player.getID()) 
             {
-                nworkers++;
+                workerCount++;
             }
-            if (u2.getType() == barracksType && u2.getPlayer() == p.getID()) 
+            else if (unit.getType() == barracksType && unit.getPlayer() == player.getID()) 
             {
-                nbarracks++;
+                barracksCount++;
             }
-            if (u2.getType() == baseType && u2.getPlayer() == p.getID()) 
+            else if (unit.getType() == baseType && unit.getPlayer() == player.getID()) 
             {
-                nbases++;
+                baseCount++;
             }
         }
-        if (nworkers < (nbases + 1) && p.getResources() >= workerType.cost) 
+        
+        // Train workers
+        if (workerCount < (baseCount + 1) && player.getResources() >= workerType.cost) 
         {
-            train(u, workerType);
+            train(baseUnit, workerType);
         }
 
-        //Buffers the resources that are being used for barracks
-        if (resourcesUsed != barracksType.cost * nbarracks) 
+        // Buffers the resources that are being used for barracks
+        if (resourcesUsed != barracksType.cost * barracksCount) 
         {
-            resources = resources - barracksType.cost;
+            resources -= barracksType.cost;
         }
-
+        
+        // Train workers
         if (buildingRacks && (resources >= workerType.cost + rangedType.cost)) 
         {
-            train(u, workerType);
+            train(baseUnit, workerType);
         }
     }
 
-    public void barracksBehavior(Unit u, Player p, PhysicalGameState pgs) 
+    public void barracksBehavior(Unit barracksUnit, Player player, PhysicalGameState playerGameState) 
     {
-        if (p.getResources() >= nextToTrain.cost) 
+        if (player.getResources() >= nextToTrain.cost) 
         {
-            train(u, nextToTrain);
+        	// Train unit type in queue
+            train(barracksUnit, nextToTrain);
             if (trainingQueueElement + 1 == trainingQueue.size()) trainingQueueElement = 0;
             else trainingQueueElement++;
             nextToTrain = trainingQueue.get(trainingQueueElement);
         }
     }
 
-    public void meleeUnitBehavior(Unit u, Player p, GameState gs) 
+    public void meleeUnitBehavior(Unit meleeUnit, Player player, GameState gameState) 
     {
-        PhysicalGameState pgs = gs.getPhysicalGameState();
+        PhysicalGameState physicalGameState = gameState.getPhysicalGameState();
         Unit closestEnemy = null;
         int closestDistance = 0;
-        for (Unit u2 : pgs.getUnits()) 
+        
+        for (Unit unit : physicalGameState.getUnits()) 
         {
-            if (u2.getPlayer() >= 0 && u2.getPlayer() != p.getID()) 
+        	// If owned by a player and is enemy player
+            if (unit.getPlayer() >= 0 && unit.getPlayer() != player.getID()) 
             {
-                int d = Math.abs(u2.getX() - u.getX()) + Math.abs(u2.getY() - u.getY());
-                if (closestEnemy == null || d < closestDistance) 
+            	// Check the smallest dX + dY against tempVar
+                int tempDistance = Math.abs(unit.getX() - meleeUnit.getX()) + Math.abs(unit.getY() - meleeUnit.getY());
+                if (closestEnemy == null || tempDistance < closestDistance) 
                 {
-                    closestEnemy = u2;
-                    closestDistance = d;
+                    closestEnemy = unit;
+                    closestDistance = tempDistance;
                 }
             }
         }
+        
+        // Sanity check.
         if (closestEnemy != null) 
         {
-//            System.out.println("LightRushAI.meleeUnitBehavior: " + u + " attacks " + closestEnemy);
-            attack(u, closestEnemy);
+            attack(meleeUnit, closestEnemy);
         }
     }
 
-    public void rangedUnitBehavior(Unit u, Player p, GameState gs) 
+    public void rangedUnitBehavior(Unit rangedUnit, Player player, GameState gameState) 
     {
-        PhysicalGameState pgs = gs.getPhysicalGameState();
+        PhysicalGameState physicalGameState = gameState.getPhysicalGameState();
         Unit closestEnemy = null;
-        Unit closestRacks = null;
+        Unit closestBarracks = null;
         int closestDistance = 0;
-        for (Unit u2 : pgs.getUnits()) {
-            if (u2.getPlayer() >= 0 && u2.getPlayer() != p.getID()) 
+        
+        for (Unit unit : physicalGameState.getUnits()) 
+        {
+        	// If owned by a player and is enemy player
+            if (unit.getPlayer() >= 0 && unit.getPlayer() != player.getID()) 
             {
-                int d = Math.abs(u2.getX() - u.getX()) + Math.abs(u2.getY() - u.getY());
-                if (closestEnemy == null || d < closestDistance) 
+            	// Check the smallest dX + dY against tempVar
+                int tempDistance = Math.abs(unit.getX() - rangedUnit.getX()) + Math.abs(unit.getY() - rangedUnit.getY());
+                if (closestEnemy == null || tempDistance < closestDistance) 
                 {
-                    closestEnemy = u2;
-                    closestDistance = d;
+                    closestEnemy = unit;
+                    closestDistance = tempDistance;
                 }
             }
-            if (u2.getType() == barracksType && u2.getPlayer() == p.getID()) 
+            
+            // Why does rangedAttack() need closest barracks?
+            if (unit.getType() == barracksType && unit.getPlayer() == player.getID()) 
             {
-                int d = Math.abs(u2.getX() - u.getX()) + Math.abs(u2.getY() - u.getY());
-                if (closestRacks == null || d < closestDistance) 
+            	// Check the smallest dX + dY against tempVar
+                int tempDistance = Math.abs(unit.getX() - rangedUnit.getX()) + Math.abs(unit.getY() - rangedUnit.getY());
+                if (closestBarracks == null || tempDistance < closestDistance) 
                 {
-                    closestRacks = u2;
-                    closestDistance = d;
+                    closestBarracks = unit;
+                    closestDistance = tempDistance;
                 }
             }
         }
+        
+        // Sanity check. Why need closest barracks though?
         if (closestEnemy != null) 
         {
-//            System.out.println("LightRushAI.meleeUnitBehavior: " + u + " attacks " + closestEnemy);
-            rangedAttack(u, closestEnemy, closestRacks);
-
+            rangedAttack(rangedUnit, closestEnemy, closestBarracks);
         }
     }
 
-    public void workersBehavior(List<Unit> workers, Player p, PhysicalGameState pgs, GameState gs) 
+    public void workersBehavior(List<Unit> workers, Player player, PhysicalGameState physicalGameState, GameState gameState) 
     {
-        int nbases = 0;
-        int nbarracks = 0;
-        int nworkers = 0;
+        int baseCount = 0;
+        int barracksCount = 0;
+        int workerCount = 0;
         resourcesUsed = 0;
         
         List<Unit> freeWorkers = new LinkedList<Unit>();
         List<Unit> battleWorkers = new LinkedList<Unit>();
-
-        for (Unit u2 : pgs.getUnits()) 
+        
+        // Update counts
+        for (Unit unit : physicalGameState.getUnits()) 
         {
-            if (u2.getType() == baseType && u2.getPlayer() == p.getID()) 
+            if (unit.getType() == baseType && unit.getPlayer() == player.getID()) 
             {
-                nbases++;
+                baseCount++;
             }
-            if (u2.getType() == barracksType && u2.getPlayer() == p.getID()) 
+            if (unit.getType() == barracksType && unit.getPlayer() == player.getID()) 
             {
-                nbarracks++;
+                barracksCount++;
             }
-            if (u2.getType() == workerType && u2.getPlayer() == p.getID()) 
+            if (unit.getType() == workerType && unit.getPlayer() == player.getID()) 
             {
-                nworkers++;
+                workerCount++;
             }
         }
 
-        if (workers.size() > (nbases + 1)) 
+        if (workers.size() > (baseCount + 1)) 
         {
-            for (int n = 0; n < (nbases + 1); n++) 
+            for (int n = 0; n < (baseCount + 1); n++) 
             {
                 freeWorkers.add(workers.get(0));
                 workers.remove(0);
@@ -312,22 +334,22 @@ public class StegosaurusAI extends AbstractionLayerAI
         }
 
         List<Integer> reservedPositions = new LinkedList<Integer>();
-        if (nbases == 0 && !freeWorkers.isEmpty()) 
+        if (baseCount == 0 && !freeWorkers.isEmpty()) 
         {
             // build a base:
-            if (p.getResources() >= baseType.cost) 
+            if (player.getResources() >= baseType.cost) 
             {
-                Unit u = freeWorkers.remove(0);
-                buildIfNotAlreadyBuilding(u, baseType, u.getX(), u.getY(), reservedPositions, p, pgs);
+                Unit unit = freeWorkers.remove(0);
+                buildIfNotAlreadyBuilding(unit, baseType, unit.getX(), unit.getY(), reservedPositions, player, physicalGameState);
                 //resourcesUsed += baseType.cost;
             }
         }
-        if ((nbarracks == 0) && (!freeWorkers.isEmpty()) && nworkers > 1 && p.getResources() >= barracksType.cost) 
+        if ((barracksCount == 0) && (!freeWorkers.isEmpty()) && workerCount > 1 && player.getResources() >= barracksType.cost) 
         {
             
-            int resources = p.getResources();
+            int resources = player.getResources();
             Unit u = freeWorkers.remove(0);   
-            buildIfNotAlreadyBuilding(u,barracksType,u.getX(),u.getY(),reservedPositions,p,pgs);
+            buildIfNotAlreadyBuilding(u,barracksType,u.getX(),u.getY(),reservedPositions,player,physicalGameState);
             resourcesUsed += barracksType.cost;
             buildingRacks = true;
                 
@@ -336,102 +358,102 @@ public class StegosaurusAI extends AbstractionLayerAI
         } 
         else 
         {
-            resourcesUsed =  barracksType.cost * nbarracks;
+            resourcesUsed =  barracksType.cost * barracksCount;
         }
         
-        if (nbarracks > 1) 
+        if (barracksCount > 1) 
         {
             buildingRacks = true;
         }
 
-        for (Unit u : battleWorkers) 
+        for (Unit unit : battleWorkers) 
         {
-            meleeUnitBehavior(u, p, gs);
+            meleeUnitBehavior(unit, player, gameState);
         }
 
         // harvest with all the free workers:
-        for (Unit u : freeWorkers) 
+        for (Unit freeWorkerUnit : freeWorkers) 
         {
             Unit closestBase = null;
             Unit closestResource = null;
             int closestDistance = 0;
-            for (Unit u2 : pgs.getUnits()) 
+            for (Unit unit : physicalGameState.getUnits()) 
             {
-                if (u2.getType().isResource) 
+                if (unit.getType().isResource) 
                 {
-                    int d = Math.abs(u2.getX() - u.getX()) + Math.abs(u2.getY() - u.getY());
-                    if (closestResource == null || d < closestDistance) 
+                    int tempDistance = Math.abs(unit.getX() - freeWorkerUnit.getX()) + Math.abs(unit.getY() - freeWorkerUnit.getY());
+                    if (closestResource == null || tempDistance < closestDistance) 
                     {
-                        closestResource = u2;
-                        closestDistance = d;
+                        closestResource = unit;
+                        closestDistance = tempDistance;
                     }
                 }
             }
             closestDistance = 0;
-            for (Unit u2 : pgs.getUnits()) 
+            for (Unit unit : physicalGameState.getUnits()) 
             {
-                if (u2.getType().isStockpile && u2.getPlayer() == p.getID()) 
+                if (unit.getType().isStockpile && unit.getPlayer() == player.getID()) 
                 {
-                    int d = Math.abs(u2.getX() - u.getX()) + Math.abs(u2.getY() - u.getY());
-                    if (closestBase == null || d < closestDistance) 
+                    int tempDistance = Math.abs(unit.getX() - freeWorkerUnit.getX()) + Math.abs(unit.getY() - freeWorkerUnit.getY());
+                    if (closestBase == null || tempDistance < closestDistance) 
                     {
-                        closestBase = u2;
-                        closestDistance = d;
+                        closestBase = unit;
+                        closestDistance = tempDistance;
                     }
                 }
             }
             if (closestResource != null && closestBase != null) 
             {
-                AbstractAction aa = getAbstractAction(u);
-                if (aa instanceof Harvest) 
+                AbstractAction abstractAction = getAbstractAction(freeWorkerUnit);
+                if (abstractAction instanceof Harvest) 
                 {
-                    Harvest h_aa = (Harvest) aa;
-                    if (h_aa.getTarget() != closestResource || h_aa.getBase() != closestBase) 
+                    Harvest harvestAbstractAction = (Harvest) abstractAction;
+                    if (harvestAbstractAction.getTarget() != closestResource || harvestAbstractAction.getBase() != closestBase) 
                     {
-                        harvest(u, closestResource, closestBase);
+                        harvest(freeWorkerUnit, closestResource, closestBase);
                     }
                 } 
                 else 
                 {
-                    harvest(u, closestResource, closestBase);
+                    harvest(freeWorkerUnit, closestResource, closestBase);
                 }
             }
         }
     }
     
     
-    public void rushBaseBehavior(Unit u,Player p, PhysicalGameState pgs) 
+    public void rushBaseBehavior(Unit thisBaseUnit, Player player, PhysicalGameState physicalGameState) 
     {
-        if (p.getResources()>=workerType.cost) train(u, workerType);
+        if (player.getResources() >= workerType.cost) train(thisBaseUnit, workerType);
     }
     
-    public void rushWorkersBehavior(List<Unit> workers, Player p, PhysicalGameState pgs, GameState gs) 
+    public void rushWorkersBehavior(List<Unit> workers, Player player, PhysicalGameState physicalGameState, GameState gameState) 
     {
-        int nbases = 0;
-        int nworkers = 0;
+        int baseCount = 0;
+        int workerCount = 0;
         resourcesUsed = 0;
         
         List<Unit> freeWorkers = new LinkedList<Unit>();
         List<Unit> battleWorkers = new LinkedList<Unit>();
 
-        for (Unit u2 : pgs.getUnits()) 
+        for (Unit unit : physicalGameState.getUnits()) 
         {
-            if (u2.getType() == baseType && u2.getPlayer() == p.getID()) 
+            if (unit.getType() == baseType && unit.getPlayer() == player.getID()) 
             {
-                nbases++;
+                baseCount++;
             }
-            if (u2.getType() == workerType && u2.getPlayer() == p.getID()) 
+            if (unit.getType() == workerType && unit.getPlayer() == player.getID()) 
             {
-                nworkers++;
+                workerCount++;
             }
         }
-        if (p.getResources() == 0)
+        if (player.getResources() == 0)
         {
             battleWorkers.addAll(workers);
         } 
-        else if (workers.size() > (nbases)) 
+        else if (workers.size() > (baseCount)) 
         {
-            for (int n = 0; n < (nbases); n++) 
+            for (int n = 0; n < (baseCount); n++) 
             {
                 freeWorkers.add(workers.get(0));
                 workers.remove(0);
@@ -448,77 +470,77 @@ public class StegosaurusAI extends AbstractionLayerAI
             return;
         }
 
-        List<Integer> reservedPositions = new LinkedList<Integer>();
-        if (nbases == 0 && !freeWorkers.isEmpty()) 
+        List <Integer> reservedPositions = new LinkedList<Integer>();
+        if (baseCount == 0 && !freeWorkers.isEmpty()) 
         {
             // build a base:
-            if (p.getResources() >= baseType.cost) 
+            if (player.getResources() >= baseType.cost) 
             {
                 Unit u = freeWorkers.remove(0);
-                buildIfNotAlreadyBuilding(u, baseType, u.getX(), u.getY(), reservedPositions, p, pgs);
+                buildIfNotAlreadyBuilding(u, baseType, u.getX(), u.getY(), reservedPositions, player, physicalGameState);
                 //resourcesUsed += baseType.cost;
             }
         }
         
-        for (Unit u : battleWorkers) 
+        for (Unit battleWorkerUnit : battleWorkers) 
         {
-            meleeUnitBehavior(u, p, gs);
+            meleeUnitBehavior(battleWorkerUnit, player, gameState);
         }
 
         // harvest with all the free workers:
-        for (Unit u : freeWorkers) 
+        for (Unit freeWorkerUnit : freeWorkers) 
         {
             Unit closestBase = null;
             Unit closestResource = null;
             int closestDistance = 0;
-            for (Unit u2 : pgs.getUnits()) 
+            for (Unit unit : physicalGameState.getUnits()) 
             {
-                if (u2.getType().isResource) 
+                if (unit.getType().isResource) 
                 {
-                    int d = Math.abs(u2.getX() - u.getX()) + Math.abs(u2.getY() - u.getY());
-                    if (closestResource == null || d < closestDistance) 
+                    int tempDistance = Math.abs(unit.getX() - freeWorkerUnit.getX()) + Math.abs(unit.getY() - freeWorkerUnit.getY());
+                    if (closestResource == null || tempDistance < closestDistance) 
                     {
-                        closestResource = u2;
-                        closestDistance = d;
+                        closestResource = unit;
+                        closestDistance = tempDistance;
                     }
                 }
             }
             closestDistance = 0;
-            for (Unit u2 : pgs.getUnits()) 
+            for (Unit unit : physicalGameState.getUnits()) 
             {
-                if (u2.getType().isStockpile && u2.getPlayer() == p.getID()) 
+                if (unit.getType().isStockpile && unit.getPlayer() == player.getID()) 
                 {
-                    int d = Math.abs(u2.getX() - u.getX()) + Math.abs(u2.getY() - u.getY());
-                    if (closestBase == null || d < closestDistance) 
+                    int tempDistance = Math.abs(unit.getX() - freeWorkerUnit.getX()) + Math.abs(unit.getY() - freeWorkerUnit.getY());
+                    if (closestBase == null || tempDistance < closestDistance) 
                     {
-                        closestBase = u2;
-                        closestDistance = d;
+                        closestBase = unit;
+                        closestDistance = tempDistance;
                     }
                 }
             }
             if (closestResource != null && closestBase != null) 
             {
-                AbstractAction aa = getAbstractAction(u);
-                if (aa instanceof Harvest) 
+                AbstractAction abstractAction = getAbstractAction(freeWorkerUnit);
+                if (abstractAction instanceof Harvest) 
                 {
-                    Harvest h_aa = (Harvest) aa;
-                    if (h_aa.getTarget() != closestResource || h_aa.getBase() != closestBase) 
+                    Harvest harvestAbstractAction = (Harvest) abstractAction;
+                    if (harvestAbstractAction.getTarget() != closestResource || harvestAbstractAction.getBase() != closestBase) 
                     {
-                        harvest(u, closestResource, closestBase);
+                        harvest(freeWorkerUnit, closestResource, closestBase);
                     }
                 } 
                 else 
                 {
-                    harvest(u, closestResource, closestBase);
+                    harvest(freeWorkerUnit, closestResource, closestBase);
                 }
             }
         }
     }
     
     
-    public void rangedAttack(Unit u, Unit target, Unit racks) 
+    public void rangedAttack(Unit rangedUnit, Unit targetUnit, Unit barracksUnit) 
     {
-        actions.put(u, new RangedAttack(u, target, racks, pf));
+        actions.put(rangedUnit, new RangedAttack(rangedUnit, targetUnit, barracksUnit, pf));
     }
     
     
@@ -528,7 +550,7 @@ public class StegosaurusAI extends AbstractionLayerAI
     {
         List<ParameterSpecification> parameters = new ArrayList<>();
 
-        parameters.add(new ParameterSpecification("PathFinding", PathFinding.class, new AStarPathFinding()));
+        parameters.add(new ParameterSpecification("PathFinding", PathFinding.class, new FloodFillPathFinding()));//AStarPathFinding()));
 
         return parameters;
     }
