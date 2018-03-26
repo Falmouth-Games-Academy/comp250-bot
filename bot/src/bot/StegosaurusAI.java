@@ -89,11 +89,11 @@ public class StegosaurusAI extends AbstractionLayerAI
         Player thisPlayer = gameState.getPlayer(player);
         boolean isRush = false;
         
-        if ((physicalGameState.getWidth() * physicalGameState.getHeight()) <= 144)
+        if ((physicalGameState.getWidth() * physicalGameState.getHeight()) <= 144000)
         {
         	// Temporary measure
         	if (physicalGameState.getWidth() != 9 && physicalGameState.getHeight() != 8) isRush = true;
-        	if (physicalGameState.getWidth() == 8 && physicalGameState.getHeight() == 8) trainingQueue = new ArrayList <UnitType> (Arrays.asList(heavyType, rangedType, rangedType));
+        	if (physicalGameState.getWidth() == 8 && physicalGameState.getHeight() == 8) trainingQueue = new ArrayList <UnitType> (Arrays.asList(lightType, rangedType));
         }
         
 //        System.out.println("LightRushAI for player " + player + " (cycle " + gs.getTime() + ")");
