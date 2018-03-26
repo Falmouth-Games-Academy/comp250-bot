@@ -87,7 +87,7 @@ public class StegosaurusAI extends AbstractionLayerAI
     {
         PhysicalGameState physicalGameState = gameState.getPhysicalGameState();
         Player thisPlayer = gameState.getPlayer(player);
-        boolean isRush = false;
+        boolean isRush = false; 
         
         if ((physicalGameState.getWidth() * physicalGameState.getHeight()) <= 144)
         {
