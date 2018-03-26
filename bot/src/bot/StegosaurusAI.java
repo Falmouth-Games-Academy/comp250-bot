@@ -45,7 +45,7 @@ public class StegosaurusAI extends AbstractionLayerAI
 
     public StegosaurusAI(UnitTypeTable a_utt) 
     {
-        this(a_utt, new GreedyPathFinding());//AStarPathFinding());
+        this(a_utt, new AStarPathFinding());
     }
 
     public StegosaurusAI(UnitTypeTable a_utt, PathFinding a_pf) 
@@ -550,7 +550,7 @@ public class StegosaurusAI extends AbstractionLayerAI
     {
         List<ParameterSpecification> parameters = new ArrayList<>();
 
-        parameters.add(new ParameterSpecification("PathFinding", PathFinding.class, new GreedyPathFinding()));//AStarPathFinding()));
+        parameters.add(new ParameterSpecification("PathFinding", PathFinding.class, new AStarPathFinding()));
 
         return parameters;
     }
