@@ -241,7 +241,7 @@ public class StegosaurusAI extends AbstractionLayerAI
         }
 
         List<Integer> reservedPositions = new LinkedList<Integer>();
-        if (nbases < 2 && !freeWorkers.isEmpty()) 
+        if (nbases == 0 && !freeWorkers.isEmpty()) 
         {
             // build a base:
             if (p.getResources() >= baseType.cost + resourcesUsed) 
@@ -252,7 +252,7 @@ public class StegosaurusAI extends AbstractionLayerAI
             }
         }
 
-        if (nbarracks < 2) 
+        if (nbarracks == 0) 
         {
             // build a barracks:
             if (p.getResources() >= barracksType.cost + resourcesUsed && !freeWorkers.isEmpty()) 
