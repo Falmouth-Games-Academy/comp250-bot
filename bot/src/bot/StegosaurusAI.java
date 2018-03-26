@@ -69,7 +69,7 @@ public class StegosaurusAI extends AbstractionLayerAI
         lightType = utt.getUnitType("Light");
         heavyType = utt.getUnitType("Heavy");
         
-        trainingQueue = new ArrayList <UnitType> (Arrays.asList(heavyType, lightType, rangedType, lightType, rangedType));
+        trainingQueue = new ArrayList <UnitType> (Arrays.asList(lightType, heavyType, rangedType, lightType, rangedType));
         nextToTrain = trainingQueue.get(0);
         trainingQueueElement = 0;
     }
@@ -93,7 +93,7 @@ public class StegosaurusAI extends AbstractionLayerAI
         {
         	// Temporary measure
         	if (physicalGameState.getWidth() != 9 && physicalGameState.getHeight() != 8) isRush = true;
-        	if (physicalGameState.getWidth() == 8 && physicalGameState.getHeight() == 8) trainingQueue = new ArrayList <UnitType> (Arrays.asList(heavyType, lightType, rangedType));
+        	//if (physicalGameState.getWidth() == 8 && physicalGameState.getHeight() == 8) trainingQueue = new ArrayList <UnitType> (Arrays.asList(heavyType, lightType, rangedType));
         }
         
 //        System.out.println("LightRushAI for player " + player + " (cycle " + gs.getTime() + ")");
