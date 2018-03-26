@@ -42,6 +42,7 @@ public class StegosaurusAI extends AbstractionLayerAI
     ArrayList <UnitType> trainingQueue;
     UnitType nextToTrain;
     int trainingQueueElement;
+    boolean isRush = false;
 
     public StegosaurusAI(UnitTypeTable a_utt) 
     {
@@ -69,7 +70,7 @@ public class StegosaurusAI extends AbstractionLayerAI
         lightType = utt.getUnitType("Light");
         heavyType = utt.getUnitType("Heavy");
         
-        trainingQueue = new ArrayList <UnitType> (Arrays.asList(lightType, heavyType, rangedType, lightType, rangedType));
+        trainingQueue = new ArrayList <UnitType> (Arrays.asList(lightType, heavyType, lightType, rangedType));
         nextToTrain = trainingQueue.get(0);
         trainingQueueElement = 0;
     }
@@ -87,12 +88,12 @@ public class StegosaurusAI extends AbstractionLayerAI
     {
         PhysicalGameState physicalGameState = gameState.getPhysicalGameState();
         Player thisPlayer = gameState.getPlayer(player);
-        boolean isRush = false; 
+        //boolean isRush = false; 
         
         if ((physicalGameState.getWidth() * physicalGameState.getHeight()) <= 144)
         {
         	// Temporary measure
-        	if (physicalGameState.getWidth() != 9 && physicalGameState.getHeight() != 8) isRush = true;
+        	//if (physicalGameState.getWidth() != 9 && physicalGameState.getHeight() != 8) isRush = true;
         	//if (physicalGameState.getWidth() == 8 && physicalGameState.getHeight() == 8) trainingQueue = new ArrayList <UnitType> (Arrays.asList(heavyType, lightType, rangedType));
         }
         
@@ -216,6 +217,7 @@ public class StegosaurusAI extends AbstractionLayerAI
             if (trainingQueueElement + 1 == trainingQueue.size()) trainingQueueElement = 0;
             else trainingQueueElement++;
             nextToTrain = trainingQueue.get(trainingQueueElement);
+            if (trainingQueueElement == 1) isRush = true;
         }
     }
 
@@ -241,7 +243,7 @@ public class StegosaurusAI extends AbstractionLayerAI
         }
         
         // Sanity check.
-        if (closestEnemy != null) 
+        if (closestEnemy != null && isRush) 
         {
             attack(meleeUnit, closestEnemy);
         }
