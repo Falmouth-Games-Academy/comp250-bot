@@ -93,7 +93,7 @@ public class StegosaurusAI extends AbstractionLayerAI
         if ((physicalGameState.getWidth() * physicalGameState.getHeight()) <= 144)
         {
         	// Temporary measure
-        	//if (physicalGameState.getWidth() != 9 && physicalGameState.getHeight() != 8) isRush = true;
+        	if (physicalGameState.getWidth() != 9 && physicalGameState.getHeight() != 8) isRush = true;
         	//if (physicalGameState.getWidth() == 8 && physicalGameState.getHeight() == 8) trainingQueue = new ArrayList <UnitType> (Arrays.asList(heavyType, lightType, rangedType));
         }
         
@@ -243,7 +243,7 @@ public class StegosaurusAI extends AbstractionLayerAI
         }
         
         // Sanity check.
-        if (closestEnemy != null && isRush) 
+        if (closestEnemy != null)// && isRush) 
         {
             attack(meleeUnit, closestEnemy);
         }
