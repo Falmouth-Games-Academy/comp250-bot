@@ -9,7 +9,7 @@ import ai.abstraction.AbstractionLayerAI;
 import ai.abstraction.Harvest;
 import ai.abstraction.cRush.RangedAttack;
 import ai.abstraction.pathfinding.AStarPathFinding;
-import ai.abstraction.pathfinding.FloodFillPathFinding;
+import ai.abstraction.pathfinding.GreedyPathFinding;
 import ai.core.AI;
 import ai.abstraction.pathfinding.PathFinding;
 import ai.core.ParameterSpecification;
@@ -45,7 +45,7 @@ public class StegosaurusAI extends AbstractionLayerAI
 
     public StegosaurusAI(UnitTypeTable a_utt) 
     {
-        this(a_utt, new FloodFillPathFinding());//AStarPathFinding());
+        this(a_utt, new GreedyPathFinding());//AStarPathFinding());
     }
 
     public StegosaurusAI(UnitTypeTable a_utt, PathFinding a_pf) 
@@ -550,7 +550,7 @@ public class StegosaurusAI extends AbstractionLayerAI
     {
         List<ParameterSpecification> parameters = new ArrayList<>();
 
-        parameters.add(new ParameterSpecification("PathFinding", PathFinding.class, new FloodFillPathFinding()));//AStarPathFinding()));
+        parameters.add(new ParameterSpecification("PathFinding", PathFinding.class, new GreedyPathFinding()));//AStarPathFinding()));
 
         return parameters;
     }
