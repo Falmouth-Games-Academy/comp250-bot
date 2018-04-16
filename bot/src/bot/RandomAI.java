@@ -33,7 +33,7 @@ public class RandomAI extends AI {
     public AI clone() {
         return new RandomAI();
     }
-   
+   // lol 
     
     @Override
     public PlayerAction getAction(int player, GameState gs) {
