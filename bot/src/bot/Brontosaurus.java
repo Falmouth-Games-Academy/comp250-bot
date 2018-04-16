@@ -27,7 +27,7 @@ import rts.units.*;
  *
  * @author Cristiano D'Angelo
  */
-public class Brontosaurus extends AbstractionLayerAI {
+class Brontosaurus extends AbstractionLayerAI {
 
     Random r = new Random();
     protected UnitTypeTable utt;
@@ -88,8 +88,7 @@ public class Brontosaurus extends AbstractionLayerAI {
         boolean isRush = false;
         
         
-        if ((pgs.getWidth() * pgs.getHeight()) <= 144)
-        {
+        if ((pgs.getWidth() * pgs.getHeight()) <= 144){
             isRush = true;
         }
         
