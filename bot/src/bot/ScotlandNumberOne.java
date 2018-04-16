@@ -8,21 +8,27 @@ import ai.core.AI;
 import ai.core.ParameterSpecification;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
+
+import ai.abstraction.AbstractionLayerAI;
+import ai.abstraction.pathfinding.AStarPathFinding;
+import ai.abstraction.pathfinding.PathFinding;
+
 import rts.*;
+import rts.units.Unit;
 import rts.units.UnitTypeTable;
 
 /**
  *
- * @author santi
+ * @author santi :)
  */
-public class ScotlandNumberOne extends AI {    
+public class ScotlandNumberOne extends AbstractionLayerAI { 
+	private Random rng; 
+	
     public ScotlandNumberOne(UnitTypeTable utt) {
+    super(new AStarPathFinding());
+    rng = new Random();
     }
-    
-
-    public ScotlandNumberOne() {
-    }
-    
     
     @Override
     public void reset() {
@@ -31,13 +37,45 @@ public class ScotlandNumberOne extends AI {
     
     @Override
     public AI clone() {
-        return new ScotlandNumberOne();
+        return new ScotlandNumberOne(null);
     }
    
     
     @Override
     public PlayerAction getAction(int player, GameState gs) {
-        try {
+        for (Unit unit : gs.getUnits())
+        {
+        	if (unit.getPlayer() == player)
+        	{
+        		if (unit.getType().canAttack && gs.getActionAssignment(unit) == null)
+        		{
+        			System.out.println("Thinking");
+        			
+        			Unit enemyUnit = null;
+        			for (Unit u : gs.getUnits())
+        			{
+        				if (u.getPlayer() != player && u.getType().canMove)
+        				{
+        					enemyUnit = u;
+        				}
+        			}
+        			if (enemyUnit != null)
+        			{
+        				attack(unit, enemyUnit);
+        			}
+        			else
+        			{
+        				int x = rng.nextInt(gs.getPhysicalGameState().getWidth());
+        				int y = rng.nextInt(gs.getPhysicalGameState().getHeight());
+        				move (unit, x, y);
+        			}
+        		}
+        	}
+        }
+    	
+        return translateActions(player, gs);
+    	/*
+    	try {
             if (!gs.canExecuteAnyAction(player)) return new PlayerAction();
             PlayerActionGenerator pag = new PlayerActionGenerator(gs, player);
             return pag.getRandom();
@@ -46,7 +84,7 @@ public class ScotlandNumberOne extends AI {
             // can execute actions, in this case, just return an empty action:
             // However, this should never happen, since we are checking for this at the beginning
             return new PlayerAction();
-        }
+        }*/
     }
     
     
