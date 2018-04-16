@@ -108,7 +108,7 @@ class Node
         // Do a depth check. This AI will explore up to a predefined depth as the end of the game is often too far away
         if (m_CurrentTreeDepth >= maxTreeDepth) return this;        
         
-        // If this node has unexplored actions, else look at best child child determined by UCB
+        // If this node has unexplored actions, else look at best child child determined by UCB.
     	if (m_HasUnexploredActions)
         {
     		// If no more actions

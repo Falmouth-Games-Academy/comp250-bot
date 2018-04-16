@@ -88,7 +88,8 @@ public class Brontosaurus extends AbstractionLayerAI {
         boolean isRush = false;
         
         
-        if ((pgs.getWidth() * pgs.getHeight()) <= 144){
+        if ((pgs.getWidth() * pgs.getHeight()) <= 144)
+        {
             isRush = true;
         }
         
