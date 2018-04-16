@@ -31,6 +31,7 @@ import rts.PlayerActionGenerator;
 import rts.units.Unit;
 import rts.units.UnitType;
 import rts.units.UnitTypeTable;
+import rts.units.*;
 
 
 /**
@@ -230,7 +231,7 @@ public class Pterodactyl extends AI//WithComputationBudget implements Interrupti
         if (!gameState.canExecuteAnyAction(player)) return new PlayerAction();
         
         // Simulate against the best heuristic quick time algorithm possible / available
-        simuationEnemyAI = new EnemyDiplodocus(unitTypeTable);//Diplodocus3(unitTypeTable);
+        simuationEnemyAI = new BurgerBot(unitTypeTable);//Diplodocus3(unitTypeTable);
         
         // Used to estimate the look ahead max tree depth heuristic
         PhysicalGameState physicalGameState = gameState.getPhysicalGameState();
@@ -372,6 +373,7 @@ public class Pterodactyl extends AI//WithComputationBudget implements Interrupti
 * Currently best available enemy to simulate play outs against
 * 
 */
+/*
 class EnemyDiplodocus extends AbstractionLayerAI
 {
 
@@ -778,5 +780,6 @@ class EnemyDiplodocus extends AbstractionLayerAI
        parameters.add(new ParameterSpecification("PathFinding", PathFinding.class, new FloodFillPathFinding()));
 
        return parameters;
-   }
+   }   
 }
+*/
