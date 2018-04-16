@@ -6,18 +6,18 @@ package bot;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.LinkedList;
+//import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Random;
+//import java.util.Random;
 
 //import ai.RandomBiasedAI;
-import ai.abstraction.AbstractAction;
-import ai.abstraction.AbstractionLayerAI;
-import ai.abstraction.Harvest;
-import ai.abstraction.cRush.RangedAttack;
-import ai.abstraction.pathfinding.FloodFillPathFinding;
-import ai.abstraction.pathfinding.PathFinding;
+//import ai.abstraction.AbstractAction;
+//import ai.abstraction.AbstractionLayerAI;
+//import ai.abstraction.Harvest;
+//import ai.abstraction.cRush.RangedAttack;
+//import ai.abstraction.pathfinding.FloodFillPathFinding;
+//import ai.abstraction.pathfinding.PathFinding;
 import ai.core.AI;
 import ai.core.ParameterSpecification;
 import ai.evaluation.EvaluationFunction;
@@ -25,14 +25,13 @@ import ai.evaluation.SimpleSqrtEvaluationFunction3;
 
 import rts.GameState;
 import rts.PhysicalGameState;
-import rts.Player;
+//import rts.Player;
 import rts.PlayerAction;
 import rts.PlayerActionGenerator;
-import rts.units.Unit;
-import rts.units.UnitType;
+//import rts.units.Unit;
+//import rts.units.UnitType;
 import rts.units.UnitTypeTable;
-import rts.units.*;
-import BurgerBot.*;
+//import rts.units.*;
 
 
 /**
@@ -181,7 +180,7 @@ public class Pterodactyl extends AI//WithComputationBudget implements Interrupti
     EvaluationFunction EVALUATION_FUNCTION = new SimpleSqrtEvaluationFunction3();
     
     // Simulations require an opponent to play out against, RandomBiasedAI is a slightly stronger opponent than RandomAI, Or maybe choose stronger?
-    AI simuationEnemyAI;// = new RandomBiasedAI();
+    Brontosaurus simuationEnemyAI;// = new RandomBiasedAI();
     
     // 
     GameState initialGameState = null;
@@ -232,7 +231,7 @@ public class Pterodactyl extends AI//WithComputationBudget implements Interrupti
         if (!gameState.canExecuteAnyAction(player)) return new PlayerAction();
         
         // Simulate against the best heuristic quick time algorithm possible / available
-        simuationEnemyAI = new BurgerBot(unitTypeTable);//Diplodocus3(unitTypeTable);
+        simuationEnemyAI = new Brontosaurus(unitTypeTable);
         
         // Used to estimate the look ahead max tree depth heuristic
         PhysicalGameState physicalGameState = gameState.getPhysicalGameState();
@@ -354,8 +353,8 @@ public class Pterodactyl extends AI//WithComputationBudget implements Interrupti
             }
             else
             {
-                gameState.issue(simuationEnemyAI.getAction(0, gameState));
-                gameState.issue(simuationEnemyAI.getAction(1, gameState));
+                gameState.issue(simuationEnemyAI.getSimulatedAction(0, gameState));
+                gameState.issue(simuationEnemyAI.getSimulatedAction(1, gameState));
             }
         }while(!gameover && gameState.getTime() < time);   
     }
