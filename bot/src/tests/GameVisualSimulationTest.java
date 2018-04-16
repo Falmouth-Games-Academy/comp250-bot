@@ -38,11 +38,11 @@ public class GameVisualSimulationTest
 			"../microrts/maps/8x8/basesWorkers8x8.xml",
 			"../microrts/maps/8x8/basesWorkers8x8A.xml",
 			"../microrts/maps/8x8/basesWorkers8x8B.xml",
-			"../microrts/maps/8x8/basesWorkers8x8C.xml",
+/*			"../microrts/maps/8x8/basesWorkers8x8C.xml",
 			"../microrts/maps/8x8/basesWorkers8x8D.xml",
 			"../microrts/maps/8x8/basesWorkers8x8E.xml",
 			"../microrts/maps/8x8/basesWorkers8x8F.xml",
-/*			"../microrts/maps/8x8/basesWorkers8x8G.xml",
+			"../microrts/maps/8x8/basesWorkers8x8G.xml",
 			"../microrts/maps/8x8/basesWorkers8x8H.xml",
 			"../microrts/maps/8x8/basesWorkers8x8I.xml",
 			"../microrts/maps/8x8/basesWorkers8x8J.xml",
@@ -152,7 +152,7 @@ public class GameVisualSimulationTest
 //			"../microrts/maps/EightBasesWorkers16x12.xml",
 //			"../microrts/maps/melee4x4light2.xml",
 //			"../microrts/maps/melee4x4Mixed2.xml",
-			"../microrts/maps/melee14x12Mixed18.xml",
+//			"../microrts/maps/melee14x12Mixed18.xml",
 			"../microrts/maps/NoWhereToRun9x8.xml"
 			));
 	
@@ -171,7 +171,7 @@ public class GameVisualSimulationTest
         boolean gameover = false;
         
         AI ai1 = new Pterodactyl(utt);
-        AI ai2 = new Brontosaurus(utt);//RandomBiasedAI();//
+        AI ai2 = new Diplodocus(utt);//RandomBiasedAI();//
 
         JFrame w = PhysicalGameStatePanel.newVisualizer(gs,640,640,false,PhysicalGameStatePanel.COLORSCHEME_BLACK);
 //        JFrame w = PhysicalGameStatePanel.newVisualizer(gs,640,640,false,PhysicalGameStatePanel.COLORSCHEME_WHITE);
