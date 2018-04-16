@@ -220,7 +220,7 @@ public class Pterodactyl extends AI//WithComputationBudget implements Interrupti
     public void reset() {
         initialGameState = null;
         tree = null;
-        rushCountdownToMCTS = 0;
+        rushCountdownToMCTS = 50;
         totalNodeVisits = 0;
         simulationEnemyAI = new RandomBiasedAI();
     }
@@ -229,7 +229,7 @@ public class Pterodactyl extends AI//WithComputationBudget implements Interrupti
     public void resetSearch() {
         tree = null;
         initialGameState = null;
-        rushCountdownToMCTS = 0;
+        rushCountdownToMCTS = 50;
         totalNodeVisits = 0;
         simulationEnemyAI = new RandomBiasedAI();
     }
@@ -257,7 +257,7 @@ public class Pterodactyl extends AI//WithComputationBudget implements Interrupti
         
         
         // Epsilon greedy?
-        if (random.nextFloat() < 0.8f) return new PlayerActionGenerator(gameState, player).getRandom();
+        if (random.nextFloat() < 0.7f) return new PlayerActionGenerator(gameState, player).getRandom();
         
         // Simulate against the best heuristic quick time algorithm possible / available
 //        simulationEnemyAI = new Brontosaurus(unitTypeTable);
