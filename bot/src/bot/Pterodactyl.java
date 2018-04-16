@@ -9,7 +9,7 @@ import java.util.HashMap;
 //import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-//import java.util.Random;
+import java.util.Random;
 
 import ai.RandomBiasedAI;
 //import ai.RandomBiasedAI;
@@ -43,7 +43,7 @@ import rts.units.UnitTypeTable;
 class Node
 {
 	// C needs a lot of tweaking
-    private float C = 0.05f;
+    private float C = 990.05f;
     private Node m_Parent;// = null;
     private GameState m_GameState;
     private int m_CurrentTreeDepth;// = 0;
@@ -104,7 +104,7 @@ class Node
     }
     
     // Returns a new Node linked to a new unexplored player action in the m_ActionMap as the PlayerAction's key
-    public Node selectNewAction(int maxPlayer, int minPlayer, long endTime, int maxTreeDepth) throws Exception
+    public Node selectNewAction(int maxPlayer, int minPlayer, long endTime, int maxTreeDepth, int totalNodeVisits) throws Exception
     {
         // Do a depth check. This AI will explore up to a predefined depth as the end of the game is often too far away
         if (m_CurrentTreeDepth >= maxTreeDepth) return this;        
@@ -149,7 +149,7 @@ class Node
         // Find the child with the best UCB score
         for (Node childNode : m_ChildrenList)
         {
-            double childNodeScore = UCBScore(childNode);
+            double childNodeScore = UCBScore(childNode, totalNodeVisits);
             if (tempBestNode == null || childNodeScore > tempBestScore)
             {
                 tempBestNode = childNode;
@@ -161,15 +161,15 @@ class Node
         if (tempBestNode == null) return this;
         
         // Explore that child for new unexplored PlayerActions
-        return tempBestNode.selectNewAction(maxPlayer, minPlayer, endTime, maxTreeDepth);
+        return tempBestNode.selectNewAction(maxPlayer, minPlayer, endTime, maxTreeDepth, totalNodeVisits);
     }    
       
-    public double UCBScore(Node child)
+    public double UCBScore(Node child, int totalNodeVisits)
     {
     	// Tweak the constant. Dynamic? How...
     	//C = 0.707f;
     	
-    	return child.getScore()/child.getVisitCount() + C * Math.sqrt(2 * Math.log((double)child.getParent().getVisitCount())/child.getVisitCount());
+    	return child.getScore()/child.getVisitCount() + C * Math.sqrt(2 * Math.log(totalNodeVisits/*(double)child.getParent().getVisitCount()*/)/child.getVisitCount());
     }
 }
 
@@ -194,11 +194,18 @@ public class Pterodactyl extends AI//WithComputationBudget implements Interrupti
     // The look ahead depth allowance of nodes in the tree
     int MAX_TREE_DEPTH; //10;
     
+    int totalNodeVisits = 0;
+    
     // The 0 or 1 identifier number of this player
     int playerNumber;
     
     // Used if needed in the initialising of an opponent AI
     UnitTypeTable unitTypeTable;
+    
+    // for epsilon greedy?
+    Random random = new Random();
+    
+    int rushCountdownToMCTS = 50;
     
     
     public Pterodactyl(UnitTypeTable utt) {
@@ -213,12 +220,18 @@ public class Pterodactyl extends AI//WithComputationBudget implements Interrupti
     public void reset() {
         initialGameState = null;
         tree = null;
+        rushCountdownToMCTS = 0;
+        totalNodeVisits = 0;
+        simulationEnemyAI = new RandomBiasedAI();
     }
     
     
     public void resetSearch() {
         tree = null;
         initialGameState = null;
+        rushCountdownToMCTS = 0;
+        totalNodeVisits = 0;
+        simulationEnemyAI = new RandomBiasedAI();
     }
     
     
@@ -232,15 +245,27 @@ public class Pterodactyl extends AI//WithComputationBudget implements Interrupti
     	// 
         if (!gameState.canExecuteAnyAction(player)) return new PlayerAction();
         
+        // Used to estimate the look ahead max tree depth heuristic
+        PhysicalGameState physicalGameState = gameState.getPhysicalGameState();
+        
+        // Rush on larger maps
+        if (physicalGameState.getWidth() > 11 && rushCountdownToMCTS != 0) 
+        	{
+        		rushCountdownToMCTS--;
+        		return new Brontosaurus(unitTypeTable).getSimulatedAction(player, gameState);
+        	}
+        
+        
+        
+        // Epsilon greedy?
+        if (random.nextFloat() < 0.8f) return new PlayerActionGenerator(gameState, player).getRandom();
+        
         // Simulate against the best heuristic quick time algorithm possible / available
 //        simulationEnemyAI = new Brontosaurus(unitTypeTable);
         
         
-        // Used to estimate the look ahead max tree depth heuristic
-        PhysicalGameState physicalGameState = gameState.getPhysicalGameState();
-        
-        // Cartesian derived heuristic for a lookahead amount
-        MAX_TREE_DEPTH = physicalGameState.getWidth() + physicalGameState.getHeight();
+        // Cartesian derived heuristic for a lookahead amount, halfway plus a bit
+        MAX_TREE_DEPTH = 10;//(physicalGameState.getWidth() + physicalGameState.getHeight())/2 + 2;
         
         // This just returns 1 as far as I can tell
         float evaluation_bound = EVALUATION_FUNCTION.upperBound(gameState);
@@ -262,11 +287,13 @@ public class Pterodactyl extends AI//WithComputationBudget implements Interrupti
             if (System.currentTimeMillis() > endTime) break;
             
         	// Tries to get a new unexplored action from the tree
-            Node newNode = tree.selectNewAction(playerNumber, 1-playerNumber, endTime, MAX_TREE_DEPTH);
+            Node newNode = tree.selectNewAction(playerNumber, 1-playerNumber, endTime, MAX_TREE_DEPTH, totalNodeVisits);
             
             // If no new actions then null is returned
             if (newNode != null)
             {
+            	//totalNodeVisits++;
+            	
             	// Clone the gameState for use in the simulation
                 GameState gameStateClone = newNode.getGameState().clone();
                 
@@ -277,12 +304,15 @@ public class Pterodactyl extends AI//WithComputationBudget implements Interrupti
                 int time = gameStateClone.getTime() - initialGameState.getTime();
                 double evaluation = EVALUATION_FUNCTION.evaluate(playerNumber, 1-playerNumber, gameStateClone) * Math.pow(0.99,time/10.0);
 
+//                System.out.println(evaluation);
+                
                 // Back propagation, cycle though each node's parents until the tree root is reached
                 while(newNode != null)
                 {
                     newNode.addScore(evaluation);
                     newNode.incrementVisitCount();
                     newNode = newNode.getParent();
+                    totalNodeVisits++;
                 }
             }
         }
