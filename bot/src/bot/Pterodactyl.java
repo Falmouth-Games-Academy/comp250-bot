@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Map;
 //import java.util.Random;
 
+import ai.RandomBiasedAI;
 //import ai.RandomBiasedAI;
 //import ai.abstraction.AbstractAction;
 //import ai.abstraction.AbstractionLayerAI;
@@ -180,7 +181,8 @@ public class Pterodactyl extends AI//WithComputationBudget implements Interrupti
     EvaluationFunction EVALUATION_FUNCTION = new SimpleSqrtEvaluationFunction3();
     
     // Simulations require an opponent to play out against, RandomBiasedAI is a slightly stronger opponent than RandomAI, Or maybe choose stronger?
-    Brontosaurus simuationEnemyAI;// = new RandomBiasedAI();
+    //Brontosaurus simulationEnemyAI;
+    AI simulationEnemyAI = new RandomBiasedAI();
     
     // 
     GameState initialGameState = null;
@@ -231,7 +233,8 @@ public class Pterodactyl extends AI//WithComputationBudget implements Interrupti
         if (!gameState.canExecuteAnyAction(player)) return new PlayerAction();
         
         // Simulate against the best heuristic quick time algorithm possible / available
-        simuationEnemyAI = new Brontosaurus(unitTypeTable);
+//        simulationEnemyAI = new Brontosaurus(unitTypeTable);
+        
         
         // Used to estimate the look ahead max tree depth heuristic
         PhysicalGameState physicalGameState = gameState.getPhysicalGameState();
@@ -250,37 +253,36 @@ public class Pterodactyl extends AI//WithComputationBudget implements Interrupti
         
         // Time stuff can be done better
         long startTime = System.currentTimeMillis();
-        long endTime = startTime + 100;
+        long endTime = startTime + 1000;
         
         // Main loop
         while(true)
         {
         	// Breaks out when the time exceeds
             if (System.currentTimeMillis() > endTime) break;
+            
+        	// Tries to get a new unexplored action from the tree
+            Node newNode = tree.selectNewAction(playerNumber, 1-playerNumber, endTime, MAX_TREE_DEPTH);
+            
+            // If no new actions then null is returned
+            if (newNode != null)
             {
-            	// Tries to get a new unexplored action from the tree
-                Node newNode = tree.selectNewAction(playerNumber, 1-playerNumber, endTime, MAX_TREE_DEPTH);
+            	// Clone the gameState for use in the simulation
+                GameState gameStateClone = newNode.getGameState().clone();
                 
-                // If no new actions then null is returned
-                if (newNode != null)
-                {
-                	// Clone the gameState for use in the simulation
-                    GameState gameStateClone = newNode.getGameState().clone();
-                    
-                    // Simulate a play out of that gameState
-                    simulate(gameStateClone, gameStateClone.getTime() + MAXSIMULATIONTIME);
-                    
-                    // Not too sure here, the evaluation tends towards zero as the time increases
-                    int time = gameStateClone.getTime() - initialGameState.getTime();
-                    double evaluation = EVALUATION_FUNCTION.evaluate(playerNumber, 1-playerNumber, gameStateClone) * Math.pow(0.99,time/10.0);
+                // Simulate a play out of that gameState
+                simulate(gameStateClone, gameStateClone.getTime() + MAXSIMULATIONTIME);
+                
+                // Not too sure here, the evaluation tends towards zero as the time increases
+                int time = gameStateClone.getTime() - initialGameState.getTime();
+                double evaluation = EVALUATION_FUNCTION.evaluate(playerNumber, 1-playerNumber, gameStateClone) * Math.pow(0.99,time/10.0);
 
-                    // Back propagation, cycle though each node's parents until the tree root is reached
-                    while(newNode != null)
-                    {
-                        newNode.addScore(evaluation);
-                        newNode.incrementVisitCount();
-                        newNode = newNode.getParent();
-                    }
+                // Back propagation, cycle though each node's parents until the tree root is reached
+                while(newNode != null)
+                {
+                    newNode.addScore(evaluation);
+                    newNode.incrementVisitCount();
+                    newNode = newNode.getParent();
                 }
             }
         }
@@ -353,8 +355,11 @@ public class Pterodactyl extends AI//WithComputationBudget implements Interrupti
             }
             else
             {
-                gameState.issue(simuationEnemyAI.getSimulatedAction(0, gameState));
-                gameState.issue(simuationEnemyAI.getSimulatedAction(1, gameState));
+                gameState.issue(simulationEnemyAI.getAction(0, gameState));
+                gameState.issue(simulationEnemyAI.getAction(1, gameState));
+                
+//                gameState.issue(simuationEnemyAI.getSimulatedAction(0, gameState));
+//                gameState.issue(simuationEnemyAI.getSimulatedAction(1, gameState));
             }
         }while(!gameover && gameState.getTime() < time);   
     }
