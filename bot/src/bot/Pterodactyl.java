@@ -253,7 +253,7 @@ public class Pterodactyl extends AI//WithComputationBudget implements Interrupti
         
         // Time stuff can be done better
         long startTime = System.currentTimeMillis();
-        long endTime = startTime + 1000;
+        long endTime = startTime + 100;
         
         // Main loop
         while(true)
