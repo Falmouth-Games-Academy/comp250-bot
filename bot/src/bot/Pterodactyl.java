@@ -256,7 +256,6 @@ public class Pterodactyl extends AI//WithComputationBudget implements Interrupti
         	}
         
         
-        
         // Epsilon greedy?
         if (random.nextFloat() < 0.8f) return new PlayerActionGenerator(gameState, player).getRandom();
         

@@ -27,7 +27,7 @@ import rts.units.*;
  *
  * @author Cristiano D'Angelo
  */
-class Brontosaurus extends AbstractionLayerAI {
+public class Brontosaurus extends AbstractionLayerAI {
 
     Random r = new Random();
     protected UnitTypeTable utt;
