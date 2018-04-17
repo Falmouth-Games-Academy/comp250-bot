@@ -37,6 +37,7 @@ public class TheDestroyer extends AbstractionLayerAI {
     UnitType lightType;
     UnitType rangedType;
     
+    // Number of units
     public int heavyCount;
     public int lightCount;
     
