@@ -291,7 +291,7 @@ public class Pterodactyl extends AI//WithComputationBudget implements Interrupti
             // If no new actions then null is returned
             if (newNode != null)
             {
-            	//totalNodeVisits++;
+            	totalNodeVisits++;
             	
             	// Clone the gameState for use in the simulation
                 GameState gameStateClone = newNode.getGameState().clone();
@@ -311,7 +311,7 @@ public class Pterodactyl extends AI//WithComputationBudget implements Interrupti
                     newNode.addScore(evaluation);
                     newNode.incrementVisitCount();
                     newNode = newNode.getParent();
-                    totalNodeVisits++;
+                    //totalNodeVisits++;
                 }
             }
         }
