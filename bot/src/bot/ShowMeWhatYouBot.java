@@ -60,7 +60,8 @@ public class ShowMeWhatYouBot extends AbstractionLayerAI {
     }
     
     public AI clone() {
-        return new ShowMeWhatYouBot(utt, pf);
+        return new ShowMeWhatYouBot(utt);
+        //return new ShowMeWhatYouBot(utt, pf);
     }
    
     
