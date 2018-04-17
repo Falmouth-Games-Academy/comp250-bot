@@ -4,19 +4,26 @@
  */
 package bot;
 
+import ai.abstraction.AbstractAction;
+import ai.abstraction.AbstractionLayerAI;
+import ai.abstraction.Harvest;
+
+import ai.abstraction.pathfinding.PathFinding;
+import ai.abstraction.pathfinding.AStarPathFinding;
 import ai.core.AI;
+import ai.abstraction.pathfinding.GreedyPathFinding;
 import ai.core.ParameterSpecification;
+
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Random;
 
-import ai.abstraction.AbstractionLayerAI;
-import ai.abstraction.pathfinding.AStarPathFinding;
-import ai.abstraction.pathfinding.PathFinding;
-
-import rts.*;
-import rts.units.Unit;
-import rts.units.UnitTypeTable;
+import rts.GameState;
+import rts.PhysicalGameState;
+import rts.Player;
+import rts.PlayerAction;
+import rts.units.*;
 
 /**
  *
@@ -24,6 +31,12 @@ import rts.units.UnitTypeTable;
  */
 public class ScotlandNumberOne extends AbstractionLayerAI { 
 	private Random rng; 
+    protected UnitTypeTable utt;
+    UnitType workerType;
+    UnitType baseType;
+    UnitType barracksType;
+    UnitType rangedType;
+    UnitType heavyType;
 	
     public ScotlandNumberOne(UnitTypeTable utt) {
     super(new AStarPathFinding());
