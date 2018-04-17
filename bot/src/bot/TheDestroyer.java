@@ -26,7 +26,7 @@ import rts.units.*;
  * @author santi
  */
 public class TheDestroyer extends AbstractionLayerAI {
-	//private Random rng;
+	private Random rng;
 	
 	Random r = new Random();
     protected UnitTypeTable utt;
