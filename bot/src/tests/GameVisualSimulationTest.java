@@ -35,8 +35,8 @@ public class GameVisualSimulationTest {
         int PERIOD = 20;
         boolean gameover = false;
         
-        AI ai1 = new WorkerRush(utt, new BFSPathFinding());
-        //AI ai1 = new ShowMeWhatYouBot(utt);
+        //AI ai1 = new WorkerRush(utt, new BFSPathFinding());
+        AI ai1 = new ShowMeWhatYouBot(utt);
         //AI ai2 = new RandomBiasedAI();
         AI ai2 = new WorkerRush(utt, new BFSPathFinding());
 
