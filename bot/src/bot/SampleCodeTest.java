@@ -23,7 +23,7 @@ import rts.units.*;
 
 /**
  *
- * @author santi
+ * @author Steve
  */
 public class SampleCodeTest extends AbstractionLayerAI {
 
