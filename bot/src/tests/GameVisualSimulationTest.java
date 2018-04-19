@@ -36,8 +36,8 @@ public class GameVisualSimulationTest {
         boolean gameover = false;
         
         //AI ai1 = new WorkerRush(utt, new BFSPathFinding());
-        AI ai1 = new ScotlandNumberOne(utt);
-        AI ai2 = new RandomBiasedAI();
+        AI ai1 = new SampleCodeTest(utt);
+        AI ai2 = new RadomBiasedAI();
 
         JFrame w = PhysicalGameStatePanel.newVisualizer(gs,640,640,false,PhysicalGameStatePanel.COLORSCHEME_BLACK);
 //        JFrame w = PhysicalGameStatePanel.newVisualizer(gs,640,640,false,PhysicalGameStatePanel.COLORSCHEME_WHITE);

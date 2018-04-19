@@ -27,7 +27,7 @@ import rts.units.*;
 
 /**
  *
- * @author santi :)
+ * @author Steve
  */
 public class ScotlandNumberOne extends AbstractionLayerAI { 
 	private Random rng; 
@@ -37,10 +37,14 @@ public class ScotlandNumberOne extends AbstractionLayerAI {
     UnitType barracksType;
     UnitType rangedType;
     UnitType heavyType;
+    
+    int lightUnits;
+    int heavyUnits;
+    int rangedUnits;
 	
     public ScotlandNumberOne(UnitTypeTable utt) {
     super(new AStarPathFinding());
-    rng = new Random();
+    //rng = new Random();
     }
     
     @Override
