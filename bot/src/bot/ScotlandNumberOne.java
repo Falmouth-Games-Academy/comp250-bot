@@ -27,7 +27,7 @@ import rts.units.*;
 
 /**
  *
- * @author Steve
+ * @author Steve :) 
  */
 public class ScotlandNumberOne extends AbstractionLayerAI { 
 	private Random rng; 
