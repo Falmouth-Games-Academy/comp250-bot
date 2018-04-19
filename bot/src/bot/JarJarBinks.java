@@ -186,10 +186,14 @@ public class JarJarBinks extends AbstractionLayerAI {
 //            System.out.println("HeavyRushAI.meleeUnitBehavior: " + u + " attacks " + closestEnemy);
             attack(u, closestEnemy);
         }
+        else if (u.getY() < 7)
+        {
+        	move(u, ( 2 + ThreadLocalRandom.current().nextInt(-1,3)), 4);
+        	
+        }
         else
         {
-        	move(u, (2 + ThreadLocalRandom.current().nextInt(-2,2)), 4);
-        	
+        	move(u, ( 13 - ThreadLocalRandom.current().nextInt(-1,3)), 11);
         }
     }
 
@@ -223,8 +227,6 @@ public class JarJarBinks extends AbstractionLayerAI {
                 Unit u = freeWorkers.remove(0);
                 buildIfNotAlreadyBuilding(u,baseType,u.getX(),u.getY(),reservedPositions,p,pgs);
                 resourcesUsed += baseType.cost;
-                basePosX = u.getX();
-                basePosY = u.getY();
                 
             }
         }
