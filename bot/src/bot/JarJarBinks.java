@@ -20,6 +20,7 @@ import rts.PhysicalGameState;
 import rts.Player;
 import rts.PlayerAction;
 import rts.units.*;
+import java.util.concurrent.ThreadLocalRandom;
 
 /**
  *
@@ -33,9 +34,14 @@ public class JarJarBinks extends AbstractionLayerAI {
     UnitType barracksType;
     UnitType heavyType;
     UnitType lightType;
+    UnitType rangedType;
     
     int lightCount;
     int heavyCount;
+    int unitCount;
+    
+    int basePosX;
+    int basePosY;
 
     // Strategy implemented by this class:
     // If we have any "heavy": send it to attack to the nearest enemy unit
@@ -65,6 +71,7 @@ public class JarJarBinks extends AbstractionLayerAI {
         barracksType = utt.getUnitType("Barracks");
         heavyType = utt.getUnitType("Heavy");
         lightType = utt.getUnitType("Light");
+        rangedType = utt.getUnitType("Ranged");
     }      
 
     public AI clone() {
@@ -134,23 +141,32 @@ public class JarJarBinks extends AbstractionLayerAI {
                 nworkers++;
             }
         }
-        if (nworkers < 1 && p.getResources() >= workerType.cost) {
+        if (nworkers < unitCount/3 && p.getResources() >= workerType.cost && nworkers < 3) {
             train(u, workerType);
         }
     }
 
     public void barracksBehavior(Unit u, Player p, PhysicalGameState pgs)
     {
-    	 if (p.getResources() >= lightType.cost && lightCount <= heavyCount) 
+    	 /* if (p.getResources() >= lightType.cost && lightCount <= heavyCount) 
  	    {
  	        train(u, lightType);
- 	        lightCount++; 
+ 	        lightCount++;
+ 	        unitCount++;
  	    }
- 	    else if (p.getResources() >= lightType.cost)
+ 	    else if (p.getResources() >= heavyType.cost)
  	    {
  	    	train(u, heavyType);
  	    	heavyCount++;
- 	    }
+ 	    	unitCount++;
+ 	    } */
+    	 if (p.getResources() >= rangedType.cost) 
+  	    {
+  	        train(u, rangedType);
+  	        lightCount++;
+  	        unitCount++;
+  	    }
+    	
     }
 
     public void meleeUnitBehavior(Unit u, Player p, GameState gs) {
@@ -166,9 +182,14 @@ public class JarJarBinks extends AbstractionLayerAI {
                 }
             }
         }
-        if (closestEnemy != null) {
+        if (closestDistance < 4 || p.getResources() == 0) { // closestEnemy != null
 //            System.out.println("HeavyRushAI.meleeUnitBehavior: " + u + " attacks " + closestEnemy);
             attack(u, closestEnemy);
+        }
+        else
+        {
+        	move(u, (2 + ThreadLocalRandom.current().nextInt(-2,2)), 4);
+        	
         }
     }
 
@@ -202,6 +223,9 @@ public class JarJarBinks extends AbstractionLayerAI {
                 Unit u = freeWorkers.remove(0);
                 buildIfNotAlreadyBuilding(u,baseType,u.getX(),u.getY(),reservedPositions,p,pgs);
                 resourcesUsed += baseType.cost;
+                basePosX = u.getX();
+                basePosY = u.getY();
+                
             }
         }
 
