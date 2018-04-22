@@ -70,48 +70,44 @@ public class AverageBot extends AbstractionLayerAI {
     
     @Override
     public PlayerAction getAction(int player, GameState gs) {
-        for (Unit unit : gs.getUnits())
-        {
-        	if (unit.getPlayer() == player)
-        	{
-        		if (unit.getType().canAttack && gs.getActionAssignment(unit) == null)
-        		{
-        			System.out.println("Thinking");
-        			
-        			Unit enemyUnit = null;
-        			for (Unit u : gs.getUnits())
-        			{
-        				if (u.getPlayer() != player && u.getType().canMove)
-        				{
-        					enemyUnit = u;
-        				}
-        			}
-        			if (enemyUnit != null)
-        			{
-        				attack(unit, enemyUnit);
-        			}
-        			else
-        			{
-        				int x = rng.nextInt(gs.getPhysicalGameState().getWidth());
-        				int y = rng.nextInt(gs.getPhysicalGameState().getHeight());
-        				move (unit, x, y);
-        			}
-        		}
-        	}
+        PhysicalGameState pgs = gs.getPhysicalGameState();
+        Player p = gs.getPlayer(player);
+//        System.out.println("HeavyRushAI for player " + player + " (cycle " + gs.getTime() + ")");
+
+        // behavior of bases:
+        for (Unit u : pgs.getUnits()) {
+            if (u.getType() == baseType
+                    && u.getPlayer() == player && gs.getActionAssignment(u) == null) {
+                baseBehavior(u, p, pgs);
+            }
         }
     	
-        return translateActions(player, gs);
-    	/*
-    	try {
-            if (!gs.canExecuteAnyAction(player)) return new PlayerAction();
-            PlayerActionGenerator pag = new PlayerActionGenerator(gs, player);
-            return pag.getRandom();
-        }catch(Exception e) {
-            // The only way the player action generator returns an exception is if there are no units that
-            // can execute actions, in this case, just return an empty action:
-            // However, this should never happen, since we are checking for this at the beginning
-            return new PlayerAction();
-        }*/
+        // behavior of barracks:
+        for (Unit u : pgs.getUnits()) {
+            if (u.getType() == barracksType
+                    && u.getPlayer() == player && gs.getActionAssignment(u) == null) {
+                barracksBehavior(u, p, pgs);
+            }
+        }
+
+        // behavior of melee units:
+        for (Unit u : pgs.getUnits()) {
+            if (u.getType().canAttack && !u.getType().canHarvest
+                    && u.getPlayer() == player && gs.getActionAssignment(u) == null) {
+                meleeUnitBehavior(u, p, gs);
+            }
+        }
+
+        // behavior of workers:
+        List<Unit> workers = new LinkedList<Unit>();
+        for (Unit u : pgs.getUnits()) {
+            if (u.getType().canHarvest && u.getPlayer() == player) {
+                workers.add(u);
+            }
+        }
+        workersBehavior(workers, p, pgs);
+        
+        return translateActions(player, gs);  
     }
     
     
