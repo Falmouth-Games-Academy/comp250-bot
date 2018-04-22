@@ -38,13 +38,13 @@ public class GameVisualSimulationTest
 			"../microrts/maps/8x8/basesWorkers8x8.xml",
 			"../microrts/maps/8x8/basesWorkers8x8A.xml",
 			"../microrts/maps/8x8/basesWorkers8x8B.xml",
-/*			"../microrts/maps/8x8/basesWorkers8x8C.xml",
+			"../microrts/maps/8x8/basesWorkers8x8C.xml",
 			"../microrts/maps/8x8/basesWorkers8x8D.xml",
 			"../microrts/maps/8x8/basesWorkers8x8E.xml",
 			"../microrts/maps/8x8/basesWorkers8x8F.xml",
 			"../microrts/maps/8x8/basesWorkers8x8G.xml",
 			"../microrts/maps/8x8/basesWorkers8x8H.xml",
-			"../microrts/maps/8x8/basesWorkers8x8I.xml",
+/*			"../microrts/maps/8x8/basesWorkers8x8I.xml",
 			"../microrts/maps/8x8/basesWorkers8x8J.xml",
 			"../microrts/maps/8x8/basesWorkers8x8K.xml",
 			"../microrts/maps/8x8/basesWorkers8x8L.xml",
@@ -60,8 +60,8 @@ public class GameVisualSimulationTest
 			
 			"../microrts/maps/10x10/basesWorkers10x10.xml",
 			
-			"../microrts/maps/12x12/basesWorkers12x12.xml",
-			"../microrts/maps/12x12/complexBasesWorkers12x12.xml",
+*/			"../microrts/maps/12x12/basesWorkers12x12.xml",
+/*			"../microrts/maps/12x12/complexBasesWorkers12x12.xml",
 			"../microrts/maps/12x12/FourBasesWorkers12x12.xml",
 			"../microrts/maps/12x12/melee12x12Mixed12.xml",
 			"../microrts/maps/12x12/OneBaseWorker12x12.xml",
@@ -70,11 +70,11 @@ public class GameVisualSimulationTest
 			"../microrts/maps/12x12/TwoBasesWorkers12x12.xml",
 			
 			"../microrts/maps/16x16/basesWorkers16x16.xml",
-			"../microrts/maps/16x16/basesWorkers16x16A.xml",
+*/			"../microrts/maps/16x16/basesWorkers16x16A.xml",
 			"../microrts/maps/16x16/basesWorkers16x16B.xml",
 			"../microrts/maps/16x16/basesWorkers16x16C.xml",
 			"../microrts/maps/16x16/basesWorkers16x16D.xml",
-			"../microrts/maps/16x16/basesWorkers16x16E.xml",
+/*			"../microrts/maps/16x16/basesWorkers16x16E.xml",
 			"../microrts/maps/16x16/basesWorkers16x16F.xml",
 			"../microrts/maps/16x16/basesWorkers16x16G.xml",
 			"../microrts/maps/16x16/basesWorkers16x16H.xml",
@@ -170,8 +170,8 @@ public class GameVisualSimulationTest
         int PERIOD = 20;
         boolean gameover = false;
         
-        AI ai1 = new Pterodactyl(utt);
-        AI ai2 = new Diplodocus(utt);//RandomBiasedAI();//
+        AI ai1 = new Velociraptor(utt);
+        AI ai2 = new RandomBiasedAI();//Brontosaurus(utt);//
 
         JFrame w = PhysicalGameStatePanel.newVisualizer(gs,640,640,false,PhysicalGameStatePanel.COLORSCHEME_BLACK);
 //        JFrame w = PhysicalGameStatePanel.newVisualizer(gs,640,640,false,PhysicalGameStatePanel.COLORSCHEME_WHITE);
