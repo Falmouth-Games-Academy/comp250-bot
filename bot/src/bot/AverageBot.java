@@ -111,7 +111,12 @@ public class AverageBot extends AbstractionLayerAI {
     }
     
     
-    private void meleeUnitBehavior(Unit u, Player p, GameState gs) {
+    private void workersBehavior(List<Unit> workers, Player p, PhysicalGameState pgs) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	private void meleeUnitBehavior(Unit u, Player p, GameState gs) {
 		// TODO Auto-generated method stub
 		
 	}
