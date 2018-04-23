@@ -435,7 +435,7 @@ class Tree
 		    			m_PlayerBaseLocationX = unit.getX();
 		    			m_PlayerBaseLocationY = unit.getY();
 		    			m_BaseIsAvailable = true;
-		    			unit.setHitPoints(20);
+		    			unit.setHitPoints(20); 
 		    		}
 	    			else
 	    			{
