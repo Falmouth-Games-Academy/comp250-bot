@@ -31,6 +31,15 @@ public class Lacplesis extends AbstractionLayerAI {
     UnitType baseType;
     UnitType barracksType;
     UnitType rangedType;
+    UnitType heavyType;
+    UnitType lightType;
+    
+    int basePosX;
+    int basePosY;
+    boolean workerDefend = false;
+    boolean inPos=false;
+    int nDefenders= 0;
+    
 
     // If we have any "light": send it to attack to the nearest enemy unit
     // If we have a base: train worker until we have 1 workers
@@ -56,6 +65,8 @@ public class Lacplesis extends AbstractionLayerAI {
         baseType = utt.getUnitType("Base");
         barracksType = utt.getUnitType("Barracks");
         rangedType = utt.getUnitType("Ranged");
+        heavyType = utt.getUnitType("Heavy");
+        lightType = utt.getUnitType("Light");
     }
 
     public AI clone() {
@@ -110,13 +121,17 @@ public class Lacplesis extends AbstractionLayerAI {
 
     public void baseBehavior(Unit u, Player p, PhysicalGameState pgs) {
         int nworkers = 0;
+        basePosX = u.getX();
+        basePosY = u.getY();
+        //System.out.println(basePos);
         for (Unit u2 : pgs.getUnits()) {
             if (u2.getType() == workerType
                     && u2.getPlayer() == p.getID()) {
                 nworkers++;
             }
         }
-        if (nworkers < 1 && p.getResources() >= workerType.cost) {
+
+        if (nworkers < 2 && p.getResources() >= workerType.cost) {
             train(u, workerType);
         }
     }
@@ -124,6 +139,7 @@ public class Lacplesis extends AbstractionLayerAI {
     public void barracksBehavior(Unit u, Player p, PhysicalGameState pgs) {
         if (p.getResources() >= rangedType.cost) {
             train(u, rangedType);
+            
         }
     }
 
@@ -157,14 +173,33 @@ public class Lacplesis extends AbstractionLayerAI {
     public void workersBehavior(List<Unit> workers, Player p, PhysicalGameState pgs) {
         int nbases = 0;
         int nbarracks = 0;
+        int nworkers = 0;
 
         int resourcesUsed = 0;
         List<Unit> freeWorkers = new LinkedList<Unit>();
-        freeWorkers.addAll(workers);
-
+        List<Unit> defendWorkers = new LinkedList<Unit>();
+        if (nDefenders == 1) {
+        	workerDefend = true;
+        }
+     
         if (workers.isEmpty()) {
             return;
         }
+        else {
+        	for (Unit wrk : workers) {
+        		if (workerDefend==false) {
+        			defendWorkers.add(wrk);
+        			nDefenders++;
+        		}
+        		else if(inPos==true && defendWorkers.isEmpty()!= true) {
+        			if(defendWorkers.get(0)!=wrk) {
+        				System.out.println("added");
+        				freeWorkers.add(wrk);
+        			}
+        		}
+        	}
+        }
+        
 
         for (Unit u2 : pgs.getUnits()) {
             if (u2.getType() == baseType
@@ -195,7 +230,44 @@ public class Lacplesis extends AbstractionLayerAI {
                 resourcesUsed += barracksType.cost;
             }
         }
+        
+        // Defend with units
+        
+        for (Unit def: defendWorkers ) {
+        	
 
+        	if(inPos==false) {
+        		move(def, basePosX+1, basePosY-1);
+        		inPos=true;
+        		System.out.println("In Position!");
+        		
+        	}
+        	else {
+        		Unit closestEnemy = null;
+                int closestDistance = 0;
+                int mybase = 0;
+                for (Unit u2 : pgs.getUnits()) {
+                    if (u2.getPlayer() >= 0 && u2.getPlayer() != p.getID()) {
+                        int d = Math.abs(u2.getX() - def.getX()) + Math.abs(u2.getY() - def.getY());
+                        if (closestEnemy == null || d < closestDistance) {
+                            closestEnemy = u2;
+                            closestDistance = d;
+                        }
+                    }
+                //else if(u2.getPlayer()==p.getID() && u2.getType() == baseType)
+                //    {
+                //        mybase = Math.abs(u2.getX() - def.getX()) + Math.abs(u2.getY() - def.getY());
+                //    }
+                }
+                if (closestEnemy!=null && closestDistance < 2) {
+                    attack(def,closestEnemy);
+                }
+                else
+                {
+                    attack(def, null);
+                }
+        	}
+        }
 
         // harvest with all the free workers:
         for (Unit u : freeWorkers) {
