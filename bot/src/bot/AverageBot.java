@@ -111,7 +111,22 @@ public class AverageBot extends AbstractionLayerAI {
     }
     
     
-    @Override
+    private void meleeUnitBehavior(Unit u, Player p, GameState gs) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	private void barracksBehavior(Unit u, Player p, PhysicalGameState pgs) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	private void baseBehavior(Unit u, Player p, PhysicalGameState pgs) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
     public List<ParameterSpecification> getParameters()
     {
         return new ArrayList<>();
