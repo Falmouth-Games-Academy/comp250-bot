@@ -6,6 +6,7 @@ package bot;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedList;
 //import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -29,7 +30,9 @@ import rts.PhysicalGameState;
 //import rts.Player;
 import rts.PlayerAction;
 import rts.PlayerActionGenerator;
+import rts.ResourceUsage;
 import rts.UnitAction;
+import rts.UnitActionAssignment;
 import rts.units.Unit;
 import rts.units.UnitType;
 //import rts.units.Unit;
@@ -53,7 +56,7 @@ class Node
     private int m_CurrentTreeDepth;// = 0;
     
     private boolean m_HasUnexploredActions = true;
-    private PlayerActionGenerator m_ActionGenerator = null;
+    private MyPlayerActionGenerator m_ActionGenerator = null;
     private PlayerAction m_Action = null;
     private GameState m_SimulatedGameState = null;
     private List<Node> m_ChildrenList = new ArrayList<>();
@@ -61,8 +64,6 @@ class Node
     private double m_Score = 0;
     private int m_VisitCount = 0;
     private Map<Node, PlayerAction> m_ActionMap = new HashMap<Node, PlayerAction> ();
-    private int actionsPruned = 0;
-    private int actionsPassed = 0;
 
     List<PlayerAction> harvestAndAttackList = new ArrayList<>();
     List<PlayerAction> harvestList = new ArrayList<>();
@@ -110,12 +111,12 @@ class Node
         	// Initialise and randomise the PlayerActionGenerator for this node based on the player number
 	        if (m_GameState.canExecuteAnyAction(maxPlayer))
 	        {
-	            m_ActionGenerator = new PlayerActionGenerator(gameState, maxPlayer);
+	            m_ActionGenerator = new MyPlayerActionGenerator(gameState, maxPlayer);
 	            m_ActionGenerator.randomizeOrder();
 	        }
 	        else if (m_GameState.canExecuteAnyAction(minPlayer))
 	        {
-	            m_ActionGenerator = new PlayerActionGenerator(gameState, minPlayer);
+	            m_ActionGenerator = new MyPlayerActionGenerator(gameState, minPlayer);
 	            m_ActionGenerator.randomizeOrder();
 	        }
         }
@@ -148,10 +149,11 @@ class Node
     		if (m_Action != null)
             {
     			// leaf pruning
-    			if ((m_CurrentTreeDepth == 0 && tree.actionSurvivesPruning(m_GameState, m_Action)) || m_CurrentTreeDepth > 0)
+    			if (tree.actionSurvivesPruning(m_GameState, m_Action))//((m_CurrentTreeDepth == 0 && tree.actionSurvivesPruning(m_GameState, m_Action)) || m_CurrentTreeDepth > 0)
     			{
-    				actionsPassed++;
-
+    				
+    				System.out.println("GGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGHHHJ");
+    				
         			m_SimulatedGameState = m_GameState.cloneIssue(m_Action);
 	                
 	    			// Constructor takes for new child takes 'this' as parent argument
@@ -170,18 +172,17 @@ class Node
     			}
     			else
     			{
-  //  				System.out.println("Action did not survive pruning.		Tree potentials size = " + tree.getNumberOfNodesToExplore());
-    				actionsPruned++;
-    				
-					return null;//selectNewAction(tree, playerNumber, endTime, maxTreeDepth);
+    				backUpList.add(m_Action);
+    				// No more actions in generator
+					return null;
     			}
             }
             else
             {
             	// Stop future iterations from trying to explore new actions from this node
-//            	System.out.println("No more actions for this Node. Explored: Pruned: " + actionsPruned + " passed: " + actionsPassed);
                 m_HasUnexploredActions = false;
                 
+                // This list kind of does the same thing as the unexplored actions bool
                 tree.removeNodeToExplore(this);
                 return null;
 //                Deque foo;//14th may 12:20
@@ -194,7 +195,7 @@ class Node
     public double UCTScore(Node node, int totalNodeVisits)
     {
     	// Tweak the constant. Dynamic? How...
-    	C = 1.0f;
+    	C = 0.050f;
     	
     	// Trying to prioritise non visited Nodes
     	if (node.getVisitCount() <= 1)
@@ -203,6 +204,167 @@ class Node
     	}
     	
     	return node.getScore()/node.getVisitCount() + C * Math.sqrt(2 * Math.log(totalNodeVisits)/node.getVisitCount());
+    }
+}
+
+class MyPlayerActionGenerator
+{
+    static Random r = new Random();
+    
+    GameState m_GameState;
+    PhysicalGameState m_PhysicalGameState;
+    ResourceUsage m_ResourceUsage;
+    List<Pair<Unit,List<UnitAction>>> m_Choices;
+    PlayerAction lastAction = null;
+    long size = 1;  // this will be capped at Long.MAX_VALUE;
+    long generated = 0;
+    int choiceSizes[] = null;
+    int currentChoice[] = null;
+    boolean moreActions = true;
+    
+    public MyPlayerActionGenerator(GameState gameState, int playerNumber) throws Exception
+    {
+        // Generate the reserved resources:
+        m_ResourceUsage = new ResourceUsage();
+        m_GameState = gameState;
+        m_PhysicalGameState = m_GameState.getPhysicalGameState();
+        
+        for(Unit u:m_PhysicalGameState.getUnits())
+        {
+            UnitActionAssignment uaa = m_GameState.getUnitActions().get(u);
+            if (uaa!=null)
+            {
+                ResourceUsage ru = uaa.action.resourceUsage(u, m_PhysicalGameState);
+                m_ResourceUsage.merge(ru);
+            }
+        }
+        
+        m_Choices = new ArrayList<>();
+        
+        for (Unit unit : m_PhysicalGameState.getUnits())
+        {
+            if (unit.getPlayer()==playerNumber)
+            {
+                if (m_GameState.getUnitActions().get(unit) == null)
+                {
+                    List<UnitAction> unitActions = unit.getUnitActions(m_GameState);
+                    m_Choices.add(new Pair<>(unit,unitActions));
+                    // make sure we don't overflow:
+                    long tempUnitActionsSize = unitActions.size();
+                    if (Long.MAX_VALUE / size <= tempUnitActionsSize)
+                    {
+                        size = Long.MAX_VALUE;
+                    }
+                    else
+                    {
+                        size *= (long)unitActions.size();
+                    }
+                }
+            }
+        }
+
+        if (m_Choices.size() == 0)
+        {
+            System.err.println("Problematic game state:");
+            System.err.println(gameState);
+            throw new Exception("Move generator for player " + playerNumber + " created with no units that can execute actions! (status: " + gameState.canExecuteAnyAction(0) + ", " + gameState.canExecuteAnyAction(1) + ")");
+        }
+
+        choiceSizes = new int[m_Choices.size()];
+        currentChoice = new int[m_Choices.size()];
+        int i = 0;
+        for(Pair <Unit, List<UnitAction>> choice : m_Choices)
+        {
+            choiceSizes[i] = choice.m_b.size();
+            currentChoice[i] = 0;
+            i++;
+        }
+    }
+    
+    public void randomizeOrder()
+    {
+        for(Pair<Unit, List<UnitAction>> choice : m_Choices)
+        {
+            List<UnitAction> tmp = new LinkedList<>();
+            tmp.addAll(choice.m_b);
+            choice.m_b.clear();
+            while(!tmp.isEmpty())
+            {
+            	choice.m_b.add(tmp.remove(r.nextInt(tmp.size())));
+           	}
+        }
+    }
+    
+    public void incrementCurrentChoice(int startPosition)
+    {
+        for (int i = 0; i < startPosition; i++) currentChoice[i] = 0;
+        currentChoice[startPosition]++;
+        if (currentChoice[startPosition]>=choiceSizes[startPosition])
+        {
+            if (startPosition<currentChoice.length-1)
+            {
+                incrementCurrentChoice(startPosition+1);
+            }
+            else
+            {
+                moreActions = false;
+            }
+        }
+    }
+    
+    public PlayerAction getNextAction(long cutOffTime) throws Exception
+    {
+        int count = 0;
+        while(moreActions)
+        {
+            boolean consistent = true;
+            PlayerAction pa = new PlayerAction();
+            pa.setResourceUsage(m_ResourceUsage.clone());
+            
+            int i = m_Choices.size();
+            
+            if (i == 0) throw new Exception("Move generator created with no units that can execute actions!");
+            
+            while(i > 0)
+            {
+                i--;
+                Pair <Unit, List<UnitAction>> unitChoices = m_Choices.get(i);
+                int choice = currentChoice[i];
+                Unit u = unitChoices.m_a;
+                UnitAction ua = unitChoices.m_b.get(choice);
+                
+                ResourceUsage resUsage = ua.resourceUsage(u, m_PhysicalGameState);
+                
+                if (pa.getResourceUsage().consistentWith(resUsage, m_GameState))
+                {
+                    pa.getResourceUsage().merge(resUsage);
+                    pa.addUnitAction(u, ua);
+                }
+                else
+                {
+                    consistent = false;
+                    break;
+                }
+            }
+            
+            incrementCurrentChoice(i);
+            if (consistent)
+            {
+                lastAction = pa;
+                generated++;                
+                return pa;
+            }
+            
+            // check if we are over time (only check once every 1000 actions, since currenttimeMillis is a slow call):
+            if (cutOffTime > 0 && (count%1000==0) && System.currentTimeMillis()>cutOffTime)
+            {
+                lastAction = null;
+                return null;
+            }
+            count++;
+        }
+        lastAction = null;
+        return null;
     }
 }
 
@@ -230,6 +392,8 @@ class Tree
 	private int m_PlayerBaseLocationY;
 	
     private int m_AttackDistance = 20;
+	
+	private Unit m_HarvesterUnit = null;
     
     public Node getRoot() { return m_Root; }
     public void addNodeToExplore(Node node) { m_NodesToExplore.add(node); }
@@ -238,7 +402,7 @@ class Tree
 
 /*------------------------------------------------------------------------*/   
     
-    public Tree(int playerNumber, GameState gameState, int halfMapDistance, float evaluationBound, UnitType baseType, UnitType workerType) throws Exception
+    public Tree(int playerNumber, GameState gameState, int halfMapDistance, float evaluationBound, UnitType baseType, UnitType workerType, Unit harvesterUnit, boolean harvesterUnitFound) throws Exception
 	{
 		m_GameState = gameState;//.clone();
 		m_Root = new Node(playerNumber, 1-playerNumber, null, m_GameState, evaluationBound);
@@ -249,10 +413,12 @@ class Tree
 		
 		m_NodesToExplore.add(m_Root);
 		
-        analyseGameState();
+		if (harvesterUnitFound) m_HarvesterUnit = harvesterUnit;
+		
+        analyseGameState(harvesterUnit, harvesterUnitFound);
 	}
 	
-	void analyseGameState()
+	void analyseGameState(Unit harvesterUnit, boolean harvesterUnitFound)
 	{
 		// Spend some loops getting the player's base locations and all resource locations
 		
@@ -261,21 +427,41 @@ class Tree
     	{
     		if(!m_BaseIsAvailable)
     		{
-	    		if (unit.getPlayer() == m_PlayerNumber && unit.getType() == m_BaseType)
+	    		if (unit.getType() == m_BaseType)
 	    		{
-	    			// Get base location
-	    			m_PlayerBaseLocationX = unit.getX();
-	    			m_PlayerBaseLocationY = unit.getY();
-	    			m_BaseIsAvailable = true;
+	    			if(unit.getPlayer() == m_PlayerNumber)
+		    		{
+		    			// Get base location
+		    			m_PlayerBaseLocationX = unit.getX();
+		    			m_PlayerBaseLocationY = unit.getY();
+		    			m_BaseIsAvailable = true;
+		    			unit.setHitPoints(20);
+		    		}
+	    			else
+	    			{
+	    				unit.setResources(0);
+	    			}
 	    		}
     		}
     		if (unit.getPlayer() == 1-m_PlayerNumber)
     		{
     			// Set something to do with enemy locations, add to list maybe, ...
     			m_EnemyList.add(unit);
+    			unit.setHitPoints(1);
+    		}
+    		else
+    		{
+    			unit.setHitPoints(500);
     		}
     		if (unit.getPlayer() == m_PlayerNumber && unit.getType() == m_WorkerType)
     		{
+    			if (!harvesterUnitFound)
+    			{
+    				harvesterUnit = unit;
+    				m_HarvesterUnit = unit;
+    				harvesterUnitFound = true;
+    				System.out.println("found");
+    			}
     			m_WorkerCount++;
     		}
     	}
@@ -292,7 +478,10 @@ class Tree
     				{
 	    				m_ResourceUnitList.add(unit);
 	        			m_ResourceIsAvailable = true;
+	        			unit.setResources(50);
     				}
+    				else
+    					unit.setResources(0);
     			}
     		}
     	}
@@ -313,7 +502,7 @@ class Tree
 		}
     	
     	// If harvesting is on the cards
-    	if (m_ResourceIsAvailable && m_BaseIsAvailable)// && m_GameState.getTime() < 900)
+    	if (m_ResourceIsAvailable && m_BaseIsAvailable && m_GameState.getTime() < 500)
     	{
     		// Prune for harvesting actions
 			for (Unit unit : simulatedGameState.getUnits())
@@ -322,7 +511,7 @@ class Tree
 				if (potentialAction != null && potentialAction.getAction(unit) != null)
 				{
 					// Look at our player
-					if (unit.getPlayer() == m_PlayerNumber)
+					if (unit == m_HarvesterUnit)//unit.getPlayer() == m_PlayerNumber)
 					{
 						// Look at the worker units first
 						if (unit.getType() == m_WorkerType)
@@ -337,14 +526,16 @@ class Tree
 							// Otherwise check for an en route worker
 							else if (potentialAction.getAction(unit).getType() == UnitAction.TYPE_MOVE)
 							{
+								int directionIdentifier = potentialAction.getAction(unit).getDirection();
+								
 								// If it's packing resources
 								if (unit.getResources() > 0)
 								{
 									// Check if moving back towards the base
-									if (m_PlayerBaseLocationX- unit.getX() < 0 && potentialAction.getAction(unit).getDirection() == UnitAction.DIRECTION_LEFT) { return true; }//thisMoveCanHarvest = true;
-									if (m_PlayerBaseLocationX- unit.getX() > 0 && potentialAction.getAction(unit).getDirection() == UnitAction.DIRECTION_RIGHT) { return true; }//thisMoveCanHarvest = true;
-									if (m_PlayerBaseLocationY- unit.getY() < 0 && potentialAction.getAction(unit).getDirection() == UnitAction.DIRECTION_UP) { return true; }//thisMoveCanHarvest = true;
-									if (m_PlayerBaseLocationY- unit.getY() < 0 && potentialAction.getAction(unit).getDirection() == UnitAction.DIRECTION_DOWN) { return true; }//thisMoveCanHarvest = true;
+									if (m_PlayerBaseLocationX- unit.getX() < 0 && directionIdentifier == 3) return true;
+									if (m_PlayerBaseLocationX- unit.getX() > 0 && directionIdentifier == 1) return true;
+									if (m_PlayerBaseLocationY- unit.getY() < 0 && directionIdentifier == 0) return true;
+									if (m_PlayerBaseLocationY- unit.getY() < 0 && directionIdentifier == 2) return true;
 									
 									
 								}
@@ -353,13 +544,13 @@ class Tree
 								{
 									for (Unit resourceUnit : m_ResourceUnitList)
 				    				{
-										int ua = potentialAction.getAction(unit).getDirection();
+										
 										
 										// If it needs to go left etc
-										if (resourceUnit.getX() - unit.getX() < 0 && ua == 3/*UnitAction.DIRECTION_LEFT*/) { return true; }//thisMoveCanHarvest = true;
-										if (resourceUnit.getX() - unit.getX() > 0 && ua == 1/*UnitAction.DIRECTION_RIGHT*/) { return true; }//thisMoveCanHarvest = true;
-										if (resourceUnit.getY() - unit.getY() < 0 && ua == 0/*UnitAction.DIRECTION_UP*/) { return true; }//thisMoveCanHarvest = true;
-										if (resourceUnit.getY() - unit.getY() > 0 && ua == 2/*UnitAction.DIRECTION_DOWN*/) { return true; }//thisMoveCanHarvest = true;
+										if (resourceUnit.getX() - unit.getX() < 0 && directionIdentifier == 3/*UnitAction.DIRECTION_LEFT*/) { return true; }
+										if (resourceUnit.getX() - unit.getX() > 0 && directionIdentifier == 1/*UnitAction.DIRECTION_RIGHT*/) { return true; }
+										if (resourceUnit.getY() - unit.getY() < 0 && directionIdentifier == 0/*UnitAction.DIRECTION_UP*/) { return true; }
+										if (resourceUnit.getY() - unit.getY() > 0 && directionIdentifier == 2/*UnitAction.DIRECTION_DOWN*/) { return true; }
 									}
 								}
 							}
@@ -369,7 +560,7 @@ class Tree
 			}
 			return false;
     	}
-//    	else
+    	else
     	// Attack the enemy! Check for attack moves first, 
     	{
     		m_AttackUnitsCount = 0;
@@ -384,7 +575,7 @@ class Tree
 					if (unit.getPlayer() == m_PlayerNumber)
 					{
 						// Check for direct attacking
-						if (potentialAction.getAction(unit).getType() == UnitAction.TYPE_ATTACK_LOCATION)
+						if (potentialAction.getAction(unit).getType() == 5)// UnitAction.TYPE_ATTACK_LOCATION)
 						{
 							return true;
 						}
@@ -402,10 +593,10 @@ class Tree
 								{
 									int ua = potentialAction.getAction(unit).getDirection();
 									
-									if (enemyUnit.getX() - unit.getX() < 0 && ua == 3/* UnitAction.DIRECTION_LEFT*/) { m_AttackUnitsCount++; if (m_AttackUnitsCount>m_WorkerCount/1.3) return true; }//return true;//thisMoveCanAttack = true;
-									if (enemyUnit.getX() - unit.getX() > 0 && ua == 1/* UnitAction.DIRECTION_RIGHT*/) { m_AttackUnitsCount++; if (m_AttackUnitsCount>m_WorkerCount/1.3) return true; }//return true;//thisMoveCanAttack = true;
-									if (enemyUnit.getY() - unit.getY() < 0 && ua == 0/* UnitAction.DIRECTION_UP*/) { m_AttackUnitsCount++; if (m_AttackUnitsCount>m_WorkerCount/1.3) return true; }//return true;//thisMoveCanAttack = true;
-									if (enemyUnit.getY() - unit.getY() > 0 && ua == 2/* UnitAction.DIRECTION_DOWN*/) { m_AttackUnitsCount++; if (m_AttackUnitsCount>m_WorkerCount/1.3) return true; }//return true;//thisMoveCanAttack = true;
+									if (enemyUnit.getX() - unit.getX() < 0 && ua == 3/* UnitAction.DIRECTION_LEFT*/) 	{ m_AttackUnitsCount++; if (m_AttackUnitsCount>m_WorkerCount/1.3) return true; }
+									if (enemyUnit.getX() - unit.getX() > 0 && ua == 1/* UnitAction.DIRECTION_RIGHT*/) 	{ m_AttackUnitsCount++; if (m_AttackUnitsCount>m_WorkerCount/1.3) return true; }
+									if (enemyUnit.getY() - unit.getY() < 0 && ua == 0/* UnitAction.DIRECTION_UP*/) 		{ m_AttackUnitsCount++; if (m_AttackUnitsCount>m_WorkerCount/1.3) return true; }
+									if (enemyUnit.getY() - unit.getY() > 0 && ua == 2/* UnitAction.DIRECTION_DOWN*/) 	{ m_AttackUnitsCount++; if (m_AttackUnitsCount>m_WorkerCount/1.3) return true; }
 								}
 							}
 						}
@@ -496,6 +687,9 @@ public class Velociraptor extends AI
     // For finding the near side resources
     int halfMapDistance;
     
+    Unit harvesterUnit = null;
+    boolean harvesterUnitFound = false;
+    
     public Velociraptor(UnitTypeTable utt) {
     	unitTypeTable = utt;
 
@@ -568,7 +762,7 @@ public class Velociraptor extends AI
         initialGameState = gameState;//.clone();
         
         // Initialise the tree
-        tree = new Tree(playerNumber, gameState, halfMapDistance, evaluationBound, baseType, workerType);
+        tree = new Tree(playerNumber, gameState, halfMapDistance, evaluationBound, baseType, workerType, harvesterUnit, harvesterUnitFound);
         
         // Time stuff can be done better
         endTime = System.currentTimeMillis() + MAXSIMULATIONTIME;
@@ -588,7 +782,7 @@ public class Velociraptor extends AI
             if (System.currentTimeMillis() > endTime) { /*System.out.println("Outta time");*/ break; }
 /*
  * 
- * 1. Call selectNewAction() function on the current nodeToExplore to get a new Node, linked to the PlayerAction in the tree node's action dictionary, and stored in the tree node's children list.
+ * 1. Call selectNewAction() function on the current nodeToExplore to get a new Node, linked to the PlayerAction in the tree root node's action dictionary, and stored in the tree's children list.
  *             
  */
             nodeToExplore = tree.findNewNodeWithBestUCTScore(totalNodeVisits);
@@ -619,32 +813,57 @@ public class Velociraptor extends AI
 //                System.out.println("Node Evaluation score: " + evaluation);
                 
                 // Back propagation, cycle though each node's parents until the tree root is reached
-                boolean printOnce = false;//true;
+                boolean printOnce = true;
                 
                 while(newNode != null)
                 {
                 	if (printOnce)
                 	{
-                		System.out.println("			Node Depth is: " + newNode.getDepth());
+                		System.out.println("Node Depth is: " + newNode.getDepth());
                 		System.out.println("");
                 		printOnce = false;
                 	}
                     newNode.addScore(evaluation);
-                    newNode.incrementVisitCount();
+                    newNode.incrementVisitCount(); 
                     newNode = newNode.getParent();
                 }
             }
       //      else
         //    	System.out.println("No good action found");
             
-            nodeToExplore = tree.findNewNodeWithBestUCTScore(totalNodeVisits);
+            Node tempNodeToExplore = tree.findNewNodeWithBestUCTScore(totalNodeVisits);
             
-            if (nodeToExplore == null)
+            if (tempNodeToExplore != null)
             {
-//---------------------------------------------HERE        
-   //         	System.out.println("FUUUUUUUUUUU");
-            	return simulationEnemyAI.getAction(player, gameState);//break;
+            	nodeToExplore = tempNodeToExplore;
             }
+            else
+            {
+//---------------------------------------------HERE       
+            	System.out.println(nodeToExplore.backUpList.size());
+            	
+            	int randIndex = random.nextInt(nodeToExplore.backUpList.size());
+            	GameState tempSimulatedGameState = nodeToExplore.getGameState();//.cloneIssue(nodeToExplore.backUpList.get(randIndex));
+                
+    			// Constructor takes for new child takes 'nodeToExplore' as parent argument
+        		Node newChildNode = new Node(playerNumber, 1 - playerNumber, nodeToExplore, tempSimulatedGameState, evaluationBound);
+                
+        		// Store action in map with newNode as key to retrieve if necessary were this node chosen as final move
+    			nodeToExplore.addToActionMap(newChildNode, nodeToExplore.backUpList.get(randIndex));
+        		
+    			// Add to children list. This is later cycled through to find the best child of a node
+                tree.getRoot().addChild(newChildNode);
+                
+                // Add to the list of Nodes worth exploring more
+                tree.addNodeToExplore(newChildNode);
+                
+                nodeToExplore = newChildNode;   
+            	
+            	
+   //         	System.out.println("FUUUUUUUUUUU");
+   //         	return simulationEnemyAI.getAction(player, gameState);//break;
+            }
+            
             
         }
         
@@ -674,12 +893,12 @@ public class Velociraptor extends AI
 //        	System.out.println("FUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUU");
         	return simulationEnemyAI.getAction(player, gameState);// new PlayerAction();
        	}
-/*
+
         System.out.println("    Tree children size: 	" + tree.getNumberOfNodesToExplore());
         System.out.println("    Total nodes examined: 	" + DEBUG_TOTAL_NODES_EXAMINED);
         System.out.println("    Total Nodes explored: 	" + totalNodeVisits);
         System.out.println("    Root Node visits: 		" + tree.getRoot().getVisitCount());
-*/        
+        
         // m_ActionMap getter
         return tree.getRoot().getActionFromChildNode(tempMostVisited);
     }
