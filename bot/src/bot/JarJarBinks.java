@@ -45,7 +45,9 @@ public class JarJarBinks extends AbstractionLayerAI {
     int basePosX;
     int basePosY;
     
-    int maxWorkers = 2;
+    int maxWorkers = 0;
+    
+    int mapSize = 0;
     
     int atkRating = 0;
     int enemyAtkRating = 0;
@@ -99,12 +101,19 @@ public class JarJarBinks extends AbstractionLayerAI {
         Player p = gs.getPlayer(player);
 //        System.out.println("HeavyRushAI for player " + player + " (cycle " + gs.getTime() + ")");   
         
+        mapSize = pgs.getWidth() * pgs.getHeight();
+        
+        if (mapSize == 144) { maxWorkers = 2; }
+        else { maxWorkers = 2; }
+        
         System.out.println("enemy " + enemyRating(player, gs));
         System.out.println("me " + playerRating(player, gs));
         
         // Update Ratings
         enemyAtkRating = enemyRating(player, gs);
         atkRating = playerRating(player, gs);
+        
+        
         
         // behavior of bases:
         for (Unit u : pgs.getUnits()) {
@@ -154,7 +163,7 @@ public class JarJarBinks extends AbstractionLayerAI {
     	
     	 PhysicalGameState pgs = gs.getPhysicalGameState();
          Player p = gs.getPlayer(player);
-    	
+         
     	// Check enemies
         for(Unit unit:pgs.getUnits()) {
             if  (unit.getPlayer()>=0 && unit.getPlayer()!=p.getID()) 
@@ -226,7 +235,10 @@ public class JarJarBinks extends AbstractionLayerAI {
                 nworkers++;
             }
         }
-        if (nworkers <= unitCount/3 && p.getResources() >= workerType.cost && nworkers < 3) { // nworkers <= unitCount/3 && 
+        
+        
+        
+        if (nworkers <= atkRating/3 && p.getResources() >= workerType.cost && nworkers < maxWorkers) { // nworkers <= unitCount/3 && 
             train(u, workerType);
         }
     }
@@ -248,8 +260,6 @@ public class JarJarBinks extends AbstractionLayerAI {
     	 if (p.getResources() >= rangedType.cost) 
   	    {
   	        train(u, rangedType);
-  	        lightCount++;
-  	        unitCount++;
   	    }
     	
     }
@@ -365,7 +375,7 @@ public class JarJarBinks extends AbstractionLayerAI {
             // build a barracks:
             if (p.getResources() >= barracksType.cost + resourcesUsed && !freeWorkers.isEmpty()) {
                 Unit u = freeWorkers.remove(0);
-                buildIfNotAlreadyBuilding(u,barracksType,u.getX(),u.getY(),reservedPositions,p,pgs);
+                buildIfNotAlreadyBuilding(u,barracksType,u.getX()+3,u.getY(),reservedPositions,p,pgs);
             	resourcesUsed += barracksType.cost;
             }
         }

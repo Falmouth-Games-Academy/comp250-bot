@@ -41,7 +41,7 @@ public class GameVisualSimulationTest {
 
         GameState gs = new GameState(pgs, utt);
         int MAXCYCLES = 5000;
-        int PERIOD = 5;
+        int PERIOD = 10;
         boolean gameover = false;
         
         //AI ai1 = new WorkerRush(utt, new BFSPathFinding());
