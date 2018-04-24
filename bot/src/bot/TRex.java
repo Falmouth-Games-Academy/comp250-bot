@@ -162,6 +162,7 @@ public class TRex extends AI//WithComputationBudget implements InterruptibleAI
         
         endTime = System.currentTimeMillis() + MAXSIMULATIONTIME;
         
+        
         // Main loop
         while (true)
         {
