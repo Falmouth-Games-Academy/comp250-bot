@@ -11,6 +11,8 @@ import ai.abstraction.pathfinding.AStarPathFinding;
 import ai.core.AI;
 import ai.abstraction.pathfinding.PathFinding;
 import ai.core.ParameterSpecification;
+
+import java.io.Console;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
@@ -43,8 +45,10 @@ public class JarJarBinks extends AbstractionLayerAI {
     int basePosX;
     int basePosY;
     
-    int enemyRating = 0;
-    int attackRating = 0;
+    int maxWorkers = 2;
+    
+    int atkRating = 0;
+    int enemyAtkRating = 0;
 
     // Strategy implemented by this class:
     // If we have any "heavy": send it to attack to the nearest enemy unit
@@ -95,44 +99,12 @@ public class JarJarBinks extends AbstractionLayerAI {
         Player p = gs.getPlayer(player);
 //        System.out.println("HeavyRushAI for player " + player + " (cycle " + gs.getTime() + ")");   
         
-        // Check enemies
-        for(Unit unit:pgs.getUnits()) {
-            if  (unit.getType().canHarvest && unit.getPlayer()>=0 && unit.getPlayer()!=p.getID()) 
-            {
-            	if (unit.getType() == workerType )
-            	{
-            		enemyRating ++;
-            	}
-            	else if (unit.getType() == lightType)
-            	{
-            		enemyRating += 2;
-            	}
-            	else if (unit.getType() == rangedType || unit.getType() == heavyType)
-            	{
-            		enemyRating += 3;
-            	}
-            }
-        }
+        System.out.println("enemy " + enemyRating(player, gs));
+        System.out.println("me " + playerRating(player, gs));
         
-        // Check Units
-        for(Unit unit:pgs.getUnits()) {
-            if  (unit.getType().canHarvest && unit.getPlayer()>=0 && unit.getPlayer()==p.getID()) 
-            {
-            	if (unit.getType() == workerType )
-            	{
-            		attackRating ++;
-            	}
-            	else if (unit.getType() == lightType)
-            	{
-            		attackRating += 2;
-            	}
-            	else if (unit.getType() == rangedType || unit.getType() == heavyType)
-            	{
-            		attackRating += 3;
-            	}
-            }
-        }
-        
+        // Update Ratings
+        enemyAtkRating = enemyRating(player, gs);
+        atkRating = playerRating(player, gs);
         
         // behavior of bases:
         for (Unit u : pgs.getUnits()) {
@@ -142,7 +114,7 @@ public class JarJarBinks extends AbstractionLayerAI {
                 baseBehavior(u, p, pgs);
             }
         }
-
+        
         // behavior of barracks:
         for (Unit u : pgs.getUnits()) {
             if (u.getType() == barracksType
@@ -175,6 +147,76 @@ public class JarJarBinks extends AbstractionLayerAI {
         return translateActions(player, gs);
         
     }
+    
+    public int enemyRating(int player, GameState gs) {
+    	
+    	int rating = 0;
+    	
+    	 PhysicalGameState pgs = gs.getPhysicalGameState();
+         Player p = gs.getPlayer(player);
+    	
+    	// Check enemies
+        for(Unit unit:pgs.getUnits()) {
+            if  (unit.getPlayer()>=0 && unit.getPlayer()!=p.getID()) 
+            {
+            	if (unit.getType() == workerType )
+            	{
+            		rating ++;
+            		//System.out.println("enRat = " + enemyRating);
+            	}
+            	else if (unit.getType() == lightType)
+            	{
+            		rating += 2;
+            	}
+            	else if (unit.getType() == rangedType)
+            	{
+            		rating += 3;
+            	}
+            	else if (unit.getType() == heavyType)
+            	{
+            		rating += 4;
+            	}
+            }
+        }
+    	
+    	return rating;
+    }
+    
+    public int playerRating(int player, GameState gs) {
+    	
+    	int rating = 0;
+    	
+    	 PhysicalGameState pgs = gs.getPhysicalGameState();
+         Player p = gs.getPlayer(player);
+    	
+    	// Check enemies
+        for(Unit unit:pgs.getUnits()) {
+            if  (unit.getPlayer()==p.getID()) 
+            {
+            	if (unit.getType() == workerType )
+            	{
+            		rating ++;
+            		//System.out.println("enRat = " + enemyRating);
+            	}
+            	else if (unit.getType() == lightType)
+            	{
+            		rating += 2;
+            	}
+            	else if (unit.getType() == rangedType)
+            	{
+            		rating += 3;
+            	}
+            	else if (unit.getType() == heavyType)
+            	{
+            		rating += 4;
+            	}
+            }
+        }
+    	
+    	return rating;
+    }
+    
+    
 
     public void baseBehavior(Unit u, Player p, PhysicalGameState pgs) {
         int nworkers = 0;
@@ -184,7 +226,7 @@ public class JarJarBinks extends AbstractionLayerAI {
                 nworkers++;
             }
         }
-        if (nworkers <= unitCount/3 && p.getResources() >= workerType.cost && nworkers < 3) {
+        if (nworkers <= unitCount/3 && p.getResources() >= workerType.cost && nworkers < 3) { // nworkers <= unitCount/3 && 
             train(u, workerType);
         }
     }
@@ -242,7 +284,7 @@ public class JarJarBinks extends AbstractionLayerAI {
 	        	}
 
         
-        if (closestDistance < 4 || attackRating > (enemyRating + 2) || p.getResources() == 0) { // closestEnemy != null
+        if (closestDistance < 4 || atkRating > (enemyAtkRating + 5) || p.getResources() == 0) { // closestEnemy != null
 //            System.out.println("HeavyRushAI.meleeUnitBehavior: " + u + " attacks " + closestEnemy);
             attack(u, closestEnemy);
         }

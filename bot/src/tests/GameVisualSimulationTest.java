@@ -45,8 +45,8 @@ public class GameVisualSimulationTest {
         boolean gameover = false;
         
         //AI ai1 = new WorkerRush(utt, new BFSPathFinding());
-        AI ai2 = new JarJarBinks(utt); //TheDestroyer(utt, MAXCYCLES);
-        AI ai1 = new HeavyRush(utt);
+        AI ai1 = new JarJarBinks(utt); //TheDestroyer(utt, MAXCYCLES);
+        AI ai2 = new Philbot(utt);
 
         JFrame w = PhysicalGameStatePanel.newVisualizer(gs,640,640,false,PhysicalGameStatePanel.COLORSCHEME_BLACK);
 //        JFrame w = PhysicalGameStatePanel.newVisualizer(gs,640,640,false,PhysicalGameStatePanel.COLORSCHEME_WHITE);
