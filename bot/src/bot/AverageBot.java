@@ -29,8 +29,11 @@ import rts.units.*;
  *
  * @author Steve :) 
  */
-public class AverageBot extends AbstractionLayerAI { 
-	private Random rng; 
+public class AverageBot extends AbstractionLayerAI {
+	
+	//private Random rng;
+	Random r = new Random();
+	
     protected UnitTypeTable utt;
     UnitType workerType;
     UnitType baseType;
@@ -45,11 +48,18 @@ public class AverageBot extends AbstractionLayerAI {
     int workerUnits;
 	
     
-    public AverageBot(UnitTypeTable utt) {
-    super(new AStarPathFinding());
-    //rng = new Random();
+    public AverageBot(UnitTypeTable a_utt) {
+    	this(a_utt, new AStarPathFinding());
     }
     
+    public AverageBot(UnitTypeTable a_utt, PathFinding a_pf) {
+        super(a_pf);
+        reset(a_utt);
+    }
+
+    public void reset() {
+    	super.reset();
+    }
     @Override
     public void reset(UnitTypeTable a_utt) {
         utt = a_utt;
@@ -64,10 +74,10 @@ public class AverageBot extends AbstractionLayerAI {
     
     @Override
     public AI clone() {
-        return new AverageBot(null);
+        return new AverageBot(utt, pf);
     }
    
-    
+    // Main Function of AI, called at each cycle
     @Override
     public PlayerAction getAction(int player, GameState gs) {
         PhysicalGameState pgs = gs.getPhysicalGameState();
