@@ -106,8 +106,8 @@ public class JarJarBinks extends AbstractionLayerAI {
         if (mapSize == 144) { maxWorkers = 2; }
         else { maxWorkers = 2; }
         
-        System.out.println("enemy " + enemyRating(player, gs));
-        System.out.println("me " + playerRating(player, gs));
+        //System.out.println("enemy " + enemyRating(player, gs));
+        //System.out.println("me " + playerRating(player, gs));
         
         // Update Ratings
         enemyAtkRating = enemyRating(player, gs);
@@ -375,7 +375,7 @@ public class JarJarBinks extends AbstractionLayerAI {
             // build a barracks:
             if (p.getResources() >= barracksType.cost + resourcesUsed && !freeWorkers.isEmpty()) {
                 Unit u = freeWorkers.remove(0);
-                buildIfNotAlreadyBuilding(u,barracksType,u.getX()+3,u.getY(),reservedPositions,p,pgs);
+                buildIfNotAlreadyBuilding(u,barracksType,u.getX(),u.getY(),reservedPositions,p,pgs);
             	resourcesUsed += barracksType.cost;
             }
         }
