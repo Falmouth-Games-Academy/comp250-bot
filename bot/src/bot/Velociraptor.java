@@ -49,11 +49,11 @@ import util.Pair;
  * @author Stomps
  */
 
-class Node
+class VelNode
 {
 	// C needs a lot of tweaking
     private float C = 0.05f;
-    private Node m_Parent;// = null;
+    private VelNode m_Parent;// = null;
     private GameState m_GameState;
     private int m_CurrentTreeDepth;// = 0;
     
@@ -61,11 +61,11 @@ class Node
     private PlayerActionGenerator m_ActionGenerator = null;
     private PlayerAction m_Action = null;
     private GameState m_SimulatedGameState = null;
-    private List<Node> m_ChildrenList = new ArrayList<>();
+    private List<VelNode> m_ChildrenList = new ArrayList<>();
     private float m_EvaluationBound = 0;
     private double m_Score = 0;
     private int m_VisitCount = 0;
-    private Map<Node, PlayerAction> m_ActionMap = new HashMap<Node, PlayerAction> ();
+    private Map<VelNode, PlayerAction> m_ActionMap = new HashMap<VelNode, PlayerAction> ();
     private List<Pair<PlayerAction, Float>> m_OrderedActionList;
 
     List<PlayerAction> harvestAndAttackList = new ArrayList<>();
@@ -83,20 +83,20 @@ class Node
     public int getVisitCount() { return m_VisitCount; }
     public int getDepth() { return m_CurrentTreeDepth; }
     public boolean getHasUnexploredActions() { return m_HasUnexploredActions; }
-    public Node getParent() { return m_Parent; }
+    public VelNode getParent() { return m_Parent; }
     public GameState getGameState() { return m_GameState; }
-    public List<Node> getChildrenList() { return m_ChildrenList; }
-    public PlayerAction getActionFromChildNode(Node child) { return m_ActionMap.get(child); }
+    public List<VelNode> getChildrenList() { return m_ChildrenList; }
+    public PlayerAction getActionFromChildNode(VelNode child) { return m_ActionMap.get(child); }
     
     public void incrementVisitCount() { m_VisitCount++; }
     public void addScore(double score) { m_Score += score; }
-    public void addChild (Node child) { m_ChildrenList.add(child); }
-    public void addToActionMap(Node node, PlayerAction playerAction) { m_ActionMap.put(node, playerAction); }
+    public void addChild (VelNode child) { m_ChildrenList.add(child); }
+    public void addToActionMap(VelNode node, PlayerAction playerAction) { m_ActionMap.put(node, playerAction); }
     
 /*------------------------------------------------------------------------*/   
     
     // Constructor
-    public Node(Tree tree, int maxPlayer, int minPlayer, Node parent, GameState gameState, float evaluationBound, long endTime) throws Exception
+    public VelNode(VelTree tree, int maxPlayer, int minPlayer, VelNode parent, GameState gameState, float evaluationBound, long endTime) throws Exception
     {
         m_Parent = parent;
         m_GameState = gameState;
@@ -135,7 +135,7 @@ class Node
     }
     
     // Returns a new Node linked to a new unexplored player action in the m_ActionMap as the PlayerAction's key
-    public Node selectNewAction(Tree tree, int playerNumber, long endTime, int maxTreeDepth) throws Exception
+    public VelNode selectNewAction(VelTree tree, int playerNumber, long endTime, int maxTreeDepth) throws Exception
     {
         // Do a depth check. This AI will explore up to a predefined depth as the end of the game is often too far away
         if (m_CurrentTreeDepth >= maxTreeDepth) return this;
@@ -157,7 +157,7 @@ class Node
         			m_SimulatedGameState = m_GameState.cloneIssue(m_Action);
 	                
 	    			// Constructor takes for new child takes 'this' as parent argument
-	        		Node newChildNode = new Node(tree, playerNumber, 1 - playerNumber, this, m_SimulatedGameState.clone(), m_EvaluationBound, endTime);
+	        		VelNode newChildNode = new VelNode(tree, playerNumber, 1 - playerNumber, this, m_SimulatedGameState.clone(), m_EvaluationBound, endTime);
 	                
 	        		// Store action in map with newNode as key to retrieve if necessary were this node chosen as final move
 	    			m_ActionMap.put(newChildNode, m_Action);
@@ -190,7 +190,7 @@ class Node
     }  
 
     
-    public double UCTScore(Node node, int totalNodeVisits)
+    public double UCTScore(VelNode node, int totalNodeVisits)
     {
     	// Tweak the constant. Dynamic? How...
     	C = 0.05f;
@@ -200,9 +200,9 @@ class Node
 }
 
 // Contains information about the tree necessary for node pruning etc
-class Tree
+class VelTree
 {
-	private Node m_Root;
+	private VelNode m_Root;
 	private GameState m_GameState = null;
 	
 	private int m_PlayerNumber;
@@ -216,7 +216,7 @@ class Tree
     private List<Unit> m_ResourceUnitList = new ArrayList<>();
     private List<Unit> m_EnemyList = new ArrayList<>();
     
-    private List<Node> m_NodesToExplore = new ArrayList<>();
+    private List<VelNode> m_NodesToExplore = new ArrayList<>();
 	
 	private float m_HarvestWeight;
 	private float m_MoveToHarvestWeight;
@@ -225,16 +225,16 @@ class Tree
 	private float m_ProduceWeight;
     private int m_AttackDistance;
 	
-    public Node getRoot() { return m_Root; }
-    public void addNodeToExplore(Node node) { m_NodesToExplore.add(node); }
-    public void removeNodeToExplore(Node node) { m_NodesToExplore.remove(node); }
+    public VelNode getRoot() { return m_Root; }
+    public void addNodeToExplore(VelNode node) { m_NodesToExplore.add(node); }
+    public void removeNodeToExplore(VelNode node) { m_NodesToExplore.remove(node); }
     public int getNumberOfNodesToExplore() { return m_NodesToExplore.size(); }
     public int getPlayerUnitDifference() { return m_FriendlyCount - m_EnemyList.size(); }
     public int getEnemyListSize() { return m_EnemyList.size(); }
 
 /*------------------------------------------------------------------------*/   
     
-    public Tree(int halfMapDistance, UnitType baseType, UnitType workerType) throws Exception
+    public VelTree(int halfMapDistance, UnitType baseType, UnitType workerType) throws Exception
 	{
 //		m_Root = new Node(this, playerNumber, 1-playerNumber, null, m_GameState, evaluationBound, endTime);
 		m_HalfMapDistance = halfMapDistance;
@@ -244,7 +244,7 @@ class Tree
     
     public void initRoot(int playerNumber, GameState gameState, float evaluationBound, long endTime) throws Exception
     {
-		m_Root = new Node(this, playerNumber, 1-playerNumber, null, gameState, evaluationBound, endTime);
+		m_Root = new VelNode(this, playerNumber, 1-playerNumber, null, gameState, evaluationBound, endTime);
 		m_NodesToExplore.add(m_Root);
 		m_GameState = gameState;
 		m_PlayerNumber = playerNumber;
@@ -459,14 +459,14 @@ class Tree
 		return actionScore;
     }
 
-    public Node findNewNodeWithBestUCTScore(int totalNodeVisits)
+    public VelNode findNewNodeWithBestUCTScore(int totalNodeVisits)
     {
         // Temporary variables
-        Node tempBestNode = null;
+        VelNode tempBestNode = null;
         double tempBestScore = -999;
         
         // Find the Node discovered so far with the best UCT score
-        for (Node potentialNode : m_NodesToExplore)// m_Root.getChildrenList())
+        for (VelNode potentialNode : m_NodesToExplore)// m_Root.getChildrenList())
         {
             double childNodeScore = potentialNode.UCTScore(potentialNode, totalNodeVisits);
             if (potentialNode.getHasUnexploredActions())
@@ -506,7 +506,7 @@ public class Velociraptor extends AI
     // Simulations require an opponent to play out against, RandomBiasedAI is a slightly stronger opponent than RandomAI, Or maybe choose stronger?
     AI simulationEnemyAI = new RandomBiasedAI();
     
-    Tree tree;
+    VelTree tree;
     GameState initialGameState;
     
     // The time allowance that is given to the main loop before breaking and finding the best found child
@@ -606,10 +606,10 @@ public class Velociraptor extends AI
         halfMapDistance = (physicalGameState.getWidth() + physicalGameState.getHeight()) / 2 + 1;
         
         // Initialise the tree
-        tree = new Tree(halfMapDistance, baseType, workerType);
+        tree = new VelTree(halfMapDistance, baseType, workerType);
         tree.initRoot(playerNumber, gameState, evaluationBound, endTime);
         tree.analyseGameState();
-/*        
+        
         int gameStateTime = gameState.getTime();
         
         if 		(gameStateTime < 100) 	tree.setAnalysisWeightings(100.0f,	1.0f,	100.0f,	0.0f,	0.0f,	6);
@@ -617,8 +617,9 @@ public class Velociraptor extends AI
         else if (gameStateTime < 600)	tree.setAnalysisWeightings(10.0f,	0.2f,	100.0f,	8.0f,	50.0f,	halfMapDistance);
         else if (gameStateTime < 1000)	tree.setAnalysisWeightings(5.0f,	0.0f,	100.0f,	10.0f,	20.0f,	halfMapDistance*2);
         else if (gameStateTime < 2000)	tree.setAnalysisWeightings(5.0f,	0.0f,	100.0f,	10.0f,	10.0f,	halfMapDistance*2);
-        else if (gameStateTime < 5000)	tree.setAnalysisWeightings(0.0f,	0.0f,	10.0f,	1.0f,	0.0f,	halfMapDistance*2);
-*/        
+        else if (gameStateTime < 5000)	tree.setAnalysisWeightings(0.0f,	0.0f,	100.0f,	10.0f,	0.0f,	halfMapDistance*2);
+  
+/*
         playerNumberDifference = tree.getPlayerUnitDifference();
         
         if		(tree.getEnemyListSize() <= 2 && gameState.getTime() > 1000)	tree.setAnalysisWeightings(0.0f,	0.0f,	100.0f,	10.0f,	0.0f,	halfMapDistance*2);
@@ -628,8 +629,8 @@ public class Velociraptor extends AI
         else if (playerNumberDifference < 5)	tree.setAnalysisWeightings(5.0f,	0.0f,	100.0f,	10.0f,	20.0f,	halfMapDistance*2);
         else if (playerNumberDifference < 6)	tree.setAnalysisWeightings(5.0f,	0.0f,	100.0f,	10.0f,	10.0f,	halfMapDistance*2);
         else if (gameState.getTime() > 4000)	tree.setAnalysisWeightings(0.0f,	0.0f,	100.0f,	10.0f,	0.0f,	halfMapDistance*2);
-        
-        Node nodeToExplore = tree.getRoot();
+*/        
+        VelNode nodeToExplore = tree.getRoot();
         
         // Main loop
         while (true)
@@ -640,7 +641,7 @@ public class Velociraptor extends AI
             nodeToExplore = tree.findNewNodeWithBestUCTScore(totalNodeVisits);
             
         	// Tries to get a new unexplored action from the tree
-            Node newNode = nodeToExplore.selectNewAction(tree, playerNumber, endTime, MAX_TREE_DEPTH);
+            VelNode newNode = nodeToExplore.selectNewAction(tree, playerNumber, endTime, MAX_TREE_DEPTH);
     		
             // If no new actions then null is returned
             if (newNode != null)
@@ -675,7 +676,7 @@ public class Velociraptor extends AI
                 }
             }
             
-            Node tempNodeToExplore = tree.findNewNodeWithBestUCTScore(totalNodeVisits);
+            VelNode tempNodeToExplore = tree.findNewNodeWithBestUCTScore(totalNodeVisits);
             
             if (tempNodeToExplore != null)
             {
@@ -695,9 +696,9 @@ public class Velociraptor extends AI
        	}
         
         // Temporary variable
-        Node tempMostVisited = null;
+        VelNode tempMostVisited = null;
         
-        for (Node child : tree.getRoot().getChildrenList())
+        for (VelNode child : tree.getRoot().getChildrenList())
         {
         	// if no other value has been assigned then assign child
             if (tempMostVisited == null ||
