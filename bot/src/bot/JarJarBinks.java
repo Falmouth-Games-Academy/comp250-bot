@@ -141,7 +141,7 @@ public class JarJarBinks extends AbstractionLayerAI {
                 nworkers++;
             }
         }
-        if (nworkers < unitCount/3 && p.getResources() >= workerType.cost && nworkers < 3) {
+        if (nworkers <= unitCount/3 && p.getResources() >= workerType.cost && nworkers < 3) {
             train(u, workerType);
         }
     }
@@ -232,34 +232,6 @@ public class JarJarBinks extends AbstractionLayerAI {
     						ThreadLocalRandom.current().nextInt(2,3));
         		}
 			}
-        	
-        	/*
-        	int Ran1 = ThreadLocalRandom.current().nextInt(-1,3);
-        	int Ran2 = ThreadLocalRandom.current().nextInt(-1,3);
-        	for (Unit baseUnit:pgs.getUnits()) {
-        		if (baseUnit.getType()==baseType && 
-        				baseUnit.getPlayer() == p.getID()) 
-        		{
-        			if (baseUnit.getX() < enemyBase.getX())
-        			{
-        				move(u, ( baseUnit.getX() + ThreadLocalRandom.current().nextInt(-1,3)), baseUnit.getY() + 
-        						ThreadLocalRandom.current().nextInt(2,3));
-        			}
-        			else
-        			{
-        				move(u, ( baseUnit.getX() - ThreadLocalRandom.current().nextInt(-1,3)), baseUnit.getY() - 
-        						ThreadLocalRandom.current().nextInt(2,3));
-        			}
-        				
-        		}
-        	}*/
-        	
-        	/*for (Unit baseUnit:pgs.getUnits()) {
-        		if (baseUnit.getType()==baseType && 
-        				baseUnit.getPlayer() == p.getID()) {
-        			if ((closestEnemy.getX() - u.getX()) != 0) xSpot = baseUnit.getX() + 2 * ((closestEnemy.getX() - u.getX()) / Math.abs(closestEnemy.getX() - u.getX()));
-        			if ((closestEnemy.getY() - u.getY()) != 0) ySpot = baseUnit.getY() + 2 * ((closestEnemy.getY() - u.getY()) / Math.abs(closestEnemy.getY() - u.getY()));			
-        		} */
         	}
 	    }
         }
