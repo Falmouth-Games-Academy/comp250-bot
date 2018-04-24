@@ -234,7 +234,7 @@ public class Lacplesis extends AbstractionLayerAI {
 
         if (nbarracks == 0 && !freeWorkers.isEmpty()) {
             // build a barracks:
-            if (p.getResources() >= barracksType.cost + resourcesUsed) {
+            if (p.getResources() >= barracksType.cost+ 2 + resourcesUsed) {
                 Unit u = freeWorkers.remove(0);
                 buildIfNotAlreadyBuilding(u,barracksType,u.getX(),u.getY(),reservedPositions,p,pgs);
                 resourcesUsed += barracksType.cost;
