@@ -142,7 +142,7 @@ public class Analysis
     	// Sorted set here
     	// Write own clone function that overwites not creates new
     	
-    	if (actionList.size() > 0)
+    	if (actionList.size() > 0 && gameState.getTime() < cutOffTime)
     	{
 	    	Collections.sort(actionList, new Comparator<Pair<PlayerAction, Float>>()
 	    			{
@@ -155,8 +155,6 @@ public class Analysis
 	    				}
 	    			});
     	}
-    	
-   // 	actionList.add(new Pair<>(null, 0.0f));
     	
 		return actionList;
     }
@@ -182,7 +180,7 @@ public class Analysis
 			for (Unit unit : simulatedGameState.getUnits())
 			{
 				// Sanity check for nulls
-				if (potentialAction != null && potentialAction.getAction(unit) != null)
+				if (potentialAction != null && potentialAction.getAction(unit) != null && gameState.getTime() < cutOffTime)
 				{
 					// Look at our player
 					if (unit.getPlayer() == m_PlayerNumber)
@@ -252,7 +250,7 @@ public class Analysis
 						{
 							actionScore += m_AttackWeight;
 						}
-						else if (m_MoveToAttackWeight > 0)
+						else if (m_MoveToAttackWeight > 0 && gameState.getTime() < cutOffTime)
 						{
 							// Check for en route attackers
 							// Check against closest distance check set beforehand
