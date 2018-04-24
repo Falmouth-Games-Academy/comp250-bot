@@ -21,7 +21,7 @@ import rts.units.*;
 
 /**
  *
- * @author santi
+ * @author Roberts
  */
 public class Lacplesis extends AbstractionLayerAI {
 
@@ -107,13 +107,22 @@ public class Lacplesis extends AbstractionLayerAI {
 
         // behavior of workers:
         List<Unit> workers = new LinkedList<Unit>();
+        List<Unit> defWorkers = new LinkedList<Unit>();
+        int dWrkCount=0;
         for (Unit u : pgs.getUnits()) {
             if (u.getType().canHarvest
                     && u.getPlayer() == player) {
-                workers.add(u);
+                if(dWrkCount<1) {
+                	defWorkers.add(u);
+                	dWrkCount++;
+                }
+                else {
+                	workers.add(u);
+                }
+            	
             }
         }
-        workersBehavior(workers, p, pgs);
+        workersBehavior(workers,defWorkers, p, pgs);
 
 
         return translateActions(player, gs);
@@ -170,10 +179,9 @@ public class Lacplesis extends AbstractionLayerAI {
         }
     }
 
-    public void workersBehavior(List<Unit> workers, Player p, PhysicalGameState pgs) {
+    public void workersBehavior(List<Unit> workers,List<Unit> defWorkers, Player p, PhysicalGameState pgs) {
         int nbases = 0;
         int nbarracks = 0;
-        int nworkers = 0;
 
         int resourcesUsed = 0;
         List<Unit> freeWorkers = new LinkedList<Unit>();
@@ -186,18 +194,20 @@ public class Lacplesis extends AbstractionLayerAI {
             return;
         }
         else {
-        	for (Unit wrk : workers) {
-        		if (workerDefend==false) {
-        			defendWorkers.add(wrk);
-        			nDefenders++;
-        		}
-        		else if(inPos==true && defendWorkers.isEmpty()!= true) {
-        			if(defendWorkers.get(0)!=wrk) {
-        				System.out.println("added");
-        				freeWorkers.add(wrk);
-        			}
-        		}
-        	}
+        	defendWorkers.addAll(defWorkers);
+        	freeWorkers.addAll(workers);
+//        	for (Unit wrk : workers) {
+//        		if (workerDefend==false) {
+//        			defendWorkers.add(wrk);
+//        			nDefenders++;
+//        		}
+//        		else if(inPos==true && defendWorkers.isEmpty()!= true) {
+//        			if(defendWorkers.get(0)!=wrk) {
+//        				System.out.println("added");
+//        				freeWorkers.add(wrk);
+//        			}
+//        		}
+//        	}
         }
         
 
@@ -238,8 +248,11 @@ public class Lacplesis extends AbstractionLayerAI {
 
         	if(inPos==false) {
         		move(def, basePosX+1, basePosY-1);
-        		inPos=true;
-        		System.out.println("In Position!");
+        		
+        		if(def.getX() == basePosX+1 && def.getY() == basePosY-1) {
+        			inPos=true;
+        			System.out.println("In Position!");
+        		}
         		
         	}
         	else {
@@ -254,10 +267,10 @@ public class Lacplesis extends AbstractionLayerAI {
                             closestDistance = d;
                         }
                     }
-                //else if(u2.getPlayer()==p.getID() && u2.getType() == baseType)
-                //    {
-                //        mybase = Math.abs(u2.getX() - def.getX()) + Math.abs(u2.getY() - def.getY());
-                //    }
+//                else if(u2.getPlayer()==p.getID() && u2.getType() == baseType)
+//                    {
+//                        mybase = Math.abs(u2.getX() - def.getX()) + Math.abs(u2.getY() - def.getY());
+//                    }
                 }
                 if (closestEnemy!=null && closestDistance < 2) {
                     attack(def,closestEnemy);

@@ -22,7 +22,7 @@ import util.XMLWriter;
 
 /**
  *
- * @author santi
+ * @author santii
  */
 public class GameVisualSimulationTest {
     public static void main(String args[]) throws Exception {
