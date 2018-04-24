@@ -27,17 +27,17 @@ import util.XMLWriter;
 public class GameVisualSimulationTest {
     public static void main(String args[]) throws Exception {
         UnitTypeTable utt = new UnitTypeTable();
-        PhysicalGameState pgs = PhysicalGameState.load("../microrts/maps/16x16/basesWorkers16x16.xml", utt);
+        PhysicalGameState pgs = PhysicalGameState.load("../microrts/maps/BWDistantResources32x32.xml", utt);
 //        PhysicalGameState pgs = MapGenerator.basesWorkers8x8Obstacle();
 
         GameState gs = new GameState(pgs, utt);
         int MAXCYCLES = 5000;
-        int PERIOD = 20;
+        int PERIOD = 5;
         boolean gameover = false;
         
         //AI ai1 = new WorkerRush(utt, new BFSPathFinding());
-        AI ai1 = new TheDestroyer(utt); //TheDestroyer(utt, MAXCYCLES);
-        AI ai2 = new RandomBiasedAI();
+        AI ai1 = new JarJarBinks(utt); //TheDestroyer(utt, MAXCYCLES);
+        AI ai2 = new HeavyRush(utt);
 
         JFrame w = PhysicalGameStatePanel.newVisualizer(gs,640,640,false,PhysicalGameStatePanel.COLORSCHEME_BLACK);
 //        JFrame w = PhysicalGameStatePanel.newVisualizer(gs,640,640,false,PhysicalGameStatePanel.COLORSCHEME_WHITE);

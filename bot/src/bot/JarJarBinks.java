@@ -170,7 +170,12 @@ public class JarJarBinks extends AbstractionLayerAI {
     }
 
     public void meleeUnitBehavior(Unit u, Player p, GameState gs) {
-        PhysicalGameState pgs = gs.getPhysicalGameState();
+        
+    	Unit enemyBase = null;
+    	Unit Base = null;
+    	
+    	
+    	PhysicalGameState pgs = gs.getPhysicalGameState();
         Unit closestEnemy = null;
         int closestDistance = 0;
         for (Unit u2 : pgs.getUnits()) {
@@ -182,19 +187,87 @@ public class JarJarBinks extends AbstractionLayerAI {
                 }
             }
         }
+        
+        for(Unit eBase:pgs.getUnits()) {
+	            if (eBase.getPlayer()>=0 && eBase.getPlayer()!=p.getID() && eBase.getType() == baseType) {
+	            	enemyBase = eBase;
+	            }
+	    for (Unit baseUnit:pgs.getUnits()) {
+	        	if (baseUnit.getType()==baseType && 
+	        		baseUnit.getPlayer() == p.getID()) {
+	        		Base = baseUnit;
+	        	}
+
+        
         if (closestDistance < 4 || p.getResources() == 0) { // closestEnemy != null
 //            System.out.println("HeavyRushAI.meleeUnitBehavior: " + u + " attacks " + closestEnemy);
             attack(u, closestEnemy);
         }
-        else if (u.getY() < 7)
+        else if (Base != null && enemyBase != null)// if (u.getY() < 7)
         {
-        	move(u, ( 2 + ThreadLocalRandom.current().nextInt(-1,3)), 4);
+        	int Ran1 = ThreadLocalRandom.current().nextInt(-1,3);
+        	if (Base.getX() < enemyBase.getX())
+			{
+        		if (Ran1 > 1)
+        		{
+        			move(u, ( Base.getX() + Ran1), Base.getY() + 
+    						ThreadLocalRandom.current().nextInt(-1,1));
+        		}
+        		else
+        		{
+        			move(u, ( Base.getX() + Ran1), Base.getY() + 
+    						ThreadLocalRandom.current().nextInt(2,3));
+        		}
+			}
+			else
+			{
+				if (Ran1 > 1)
+        		{
+        			move(u, ( Base.getX() - Ran1), Base.getY() - 
+    						ThreadLocalRandom.current().nextInt(-1,1));
+        		}
+        		else
+        		{
+        			move(u, ( Base.getX() - Ran1), Base.getY() - 
+    						ThreadLocalRandom.current().nextInt(2,3));
+        		}
+			}
         	
+        	/*
+        	int Ran1 = ThreadLocalRandom.current().nextInt(-1,3);
+        	int Ran2 = ThreadLocalRandom.current().nextInt(-1,3);
+        	for (Unit baseUnit:pgs.getUnits()) {
+        		if (baseUnit.getType()==baseType && 
+        				baseUnit.getPlayer() == p.getID()) 
+        		{
+        			if (baseUnit.getX() < enemyBase.getX())
+        			{
+        				move(u, ( baseUnit.getX() + ThreadLocalRandom.current().nextInt(-1,3)), baseUnit.getY() + 
+        						ThreadLocalRandom.current().nextInt(2,3));
+        			}
+        			else
+        			{
+        				move(u, ( baseUnit.getX() - ThreadLocalRandom.current().nextInt(-1,3)), baseUnit.getY() - 
+        						ThreadLocalRandom.current().nextInt(2,3));
+        			}
+        				
+        		}
+        	}*/
+        	
+        	/*for (Unit baseUnit:pgs.getUnits()) {
+        		if (baseUnit.getType()==baseType && 
+        				baseUnit.getPlayer() == p.getID()) {
+        			if ((closestEnemy.getX() - u.getX()) != 0) xSpot = baseUnit.getX() + 2 * ((closestEnemy.getX() - u.getX()) / Math.abs(closestEnemy.getX() - u.getX()));
+        			if ((closestEnemy.getY() - u.getY()) != 0) ySpot = baseUnit.getY() + 2 * ((closestEnemy.getY() - u.getY()) / Math.abs(closestEnemy.getY() - u.getY()));			
+        		} */
+        	}
+	    }
         }
-        else
+        	
+        /* else
         {
         	move(u, ( 13 - ThreadLocalRandom.current().nextInt(-1,3)), 11);
-        }
+        }*/
     }
 
     public void workersBehavior(List<Unit> workers, Player p, PhysicalGameState pgs) {
