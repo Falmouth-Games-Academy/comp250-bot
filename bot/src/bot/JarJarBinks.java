@@ -42,6 +42,9 @@ public class JarJarBinks extends AbstractionLayerAI {
     
     int basePosX;
     int basePosY;
+    
+    int enemyRating = 0;
+    int attackRating = 0;
 
     // Strategy implemented by this class:
     // If we have any "heavy": send it to attack to the nearest enemy unit
@@ -90,8 +93,47 @@ public class JarJarBinks extends AbstractionLayerAI {
     public PlayerAction getAction(int player, GameState gs) {
         PhysicalGameState pgs = gs.getPhysicalGameState();
         Player p = gs.getPlayer(player);
-//        System.out.println("HeavyRushAI for player " + player + " (cycle " + gs.getTime() + ")");
-
+//        System.out.println("HeavyRushAI for player " + player + " (cycle " + gs.getTime() + ")");   
+        
+        // Check enemies
+        for(Unit unit:pgs.getUnits()) {
+            if  (unit.getType().canHarvest && unit.getPlayer()>=0 && unit.getPlayer()!=p.getID()) 
+            {
+            	if (unit.getType() == workerType )
+            	{
+            		enemyRating ++;
+            	}
+            	else if (unit.getType() == lightType)
+            	{
+            		enemyRating += 2;
+            	}
+            	else if (unit.getType() == rangedType || unit.getType() == heavyType)
+            	{
+            		enemyRating += 3;
+            	}
+            }
+        }
+        
+        // Check Units
+        for(Unit unit:pgs.getUnits()) {
+            if  (unit.getType().canHarvest && unit.getPlayer()>=0 && unit.getPlayer()==p.getID()) 
+            {
+            	if (unit.getType() == workerType )
+            	{
+            		attackRating ++;
+            	}
+            	else if (unit.getType() == lightType)
+            	{
+            		attackRating += 2;
+            	}
+            	else if (unit.getType() == rangedType || unit.getType() == heavyType)
+            	{
+            		attackRating += 3;
+            	}
+            }
+        }
+        
+        
         // behavior of bases:
         for (Unit u : pgs.getUnits()) {
             if (u.getType() == baseType
@@ -131,6 +173,7 @@ public class JarJarBinks extends AbstractionLayerAI {
 
         // This method simply takes all the unit actions executed so far, and packages them into a PlayerAction
         return translateActions(player, gs);
+        
     }
 
     public void baseBehavior(Unit u, Player p, PhysicalGameState pgs) {
@@ -199,7 +242,7 @@ public class JarJarBinks extends AbstractionLayerAI {
 	        	}
 
         
-        if (closestDistance < 4 || p.getResources() == 0) { // closestEnemy != null
+        if (closestDistance < 4 || attackRating > (enemyRating + 2) || p.getResources() == 0) { // closestEnemy != null
 //            System.out.println("HeavyRushAI.meleeUnitBehavior: " + u + " attacks " + closestEnemy);
             attack(u, closestEnemy);
         }

@@ -27,8 +27,17 @@ import util.XMLWriter;
 public class GameVisualSimulationTest {
     public static void main(String args[]) throws Exception {
         UnitTypeTable utt = new UnitTypeTable();
-        PhysicalGameState pgs = PhysicalGameState.load("../microrts/maps/BWDistantResources32x32.xml", utt);
+        PhysicalGameState pgs = PhysicalGameState.load("../microrts/maps/12x12/basesWorkers12x12.xml", utt);
 //        PhysicalGameState pgs = MapGenerator.basesWorkers8x8Obstacle();
+        // 8x8/basesWorkers8x8Obstacle.xml
+        // 8x8/basesWorkers8x8
+        // 8x8/bases8x8
+        // NoWhereToRun9x8
+        // 10x10/basesWorkers10x10
+        // 12x12/basesWorkers12x12
+        // 16x16/basesWorkers16x16
+        // 24x24/basesWorkers24x24
+        // 
 
         GameState gs = new GameState(pgs, utt);
         int MAXCYCLES = 5000;
@@ -36,8 +45,8 @@ public class GameVisualSimulationTest {
         boolean gameover = false;
         
         //AI ai1 = new WorkerRush(utt, new BFSPathFinding());
-        AI ai1 = new JarJarBinks(utt); //TheDestroyer(utt, MAXCYCLES);
-        AI ai2 = new HeavyRush(utt);
+        AI ai2 = new JarJarBinks(utt); //TheDestroyer(utt, MAXCYCLES);
+        AI ai1 = new HeavyRush(utt);
 
         JFrame w = PhysicalGameStatePanel.newVisualizer(gs,640,640,false,PhysicalGameStatePanel.COLORSCHEME_BLACK);
 //        JFrame w = PhysicalGameStatePanel.newVisualizer(gs,640,640,false,PhysicalGameStatePanel.COLORSCHEME_WHITE);
