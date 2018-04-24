@@ -160,7 +160,6 @@ public class TRex extends AI//WithComputationBudget implements InterruptibleAI
         // Initialise the tree as a new Node with parent = null
         treeRootNode = new Node(playerNumber, 1-playerNumber, null, gameState.clone(), analysis, endTime);
         
-
         endTime = System.currentTimeMillis() + MAXSIMULATIONTIME;
         
         // Main loop
