@@ -30,8 +30,7 @@ import rts.units.*;
  * @author Steve :) 
  */
 public class AverageBot extends AbstractionLayerAI {
-	
-	//private Random rng;
+	//All variables needed
 	Random r = new Random();
 	
     protected UnitTypeTable utt;
@@ -42,10 +41,17 @@ public class AverageBot extends AbstractionLayerAI {
     UnitType heavyType;
     UnitType lightType;
     
-    int lightUnits;
-    int heavyUnits;
-    int rangedUnits;
-    int workerUnits;
+    List<Unit> workerUnitList = new LinkedList<Unit>();
+    List<Unit> rangedUnitList = new LinkedList<Unit>();
+    List<Unit> heavyUnitList = new LinkedList<Unit>();
+    List<Unit> UnitList = new LinkedList<Unit>();
+    List<Unit> enemyUnitList = new LinkedList<Unit>();
+    
+    Unit base = null;
+    Unit barracks = null;
+    Unit enemyBase = null;
+    Unit enemyBarracks = null;
+    
 	
     
     public AverageBot(UnitTypeTable a_utt) {
@@ -61,6 +67,7 @@ public class AverageBot extends AbstractionLayerAI {
     	super.reset();
     }
     @Override
+    //Assigning units to variables
     public void reset(UnitTypeTable a_utt) {
         utt = a_utt;
         workerType = utt.getUnitType("Worker");
@@ -74,12 +81,13 @@ public class AverageBot extends AbstractionLayerAI {
     
     @Override
     public AI clone() {
-        return new AverageBot(utt, pf);
+        return new AverageBot(null);
     }
    
     // Main Function of AI, called at each cycle
     @Override
     public PlayerAction getAction(int player, GameState gs) {
+    	
         PhysicalGameState pgs = gs.getPhysicalGameState();
         Player p = gs.getPlayer(player);
 //        System.out.println("HeavyRushAI for player " + player + " (cycle " + gs.getTime() + ")");
