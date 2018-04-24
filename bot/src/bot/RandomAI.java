@@ -26,7 +26,6 @@ public class RandomAI extends AI {
     
     @Override
     public void reset() {
-    	//lol
     }
 
     
