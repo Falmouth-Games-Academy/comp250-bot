@@ -48,24 +48,25 @@ import util.Pair;
 
 class Node
 {
-	// C needs a lot of tweaking
+	// C needs tweaking
     private float C = 0.05f;
-    private Node m_Parent;// = null;
+    private Node m_Parent;
     private GameState m_GameState;
-    private int m_CurrentTreeDepth;// = 0;
+    private int m_CurrentTreeDepth;
     
+    private PlayerActionGenerator m_ActionGenerator;
     private boolean m_HasUnexploredActions = true;
-    private PlayerActionGenerator m_ActionGenerator = null;
     private List<Node> m_ChildrenList = new ArrayList<>();
-    private float m_EvaluationBound = 0;
     private double m_Score = 0;
     private int m_VisitCount = 0;
     private Map<Node, PlayerAction> m_ActionMap = new HashMap<Node, PlayerAction> ();
-    private List<Pair<PlayerAction, Float>> m_OrderedActionList;
+    private List<Pair<PlayerAction, Float>> m_OrderedActionList = new ArrayList<Pair<PlayerAction, Float>>();
+    private PlayerAction m_Action;
+    private GameState m_SimulatedGameState;
     
-    int m_CurrentActionIndex = 0;
-    int m_MaxActionIndex;
-    int m_MaxAmountOfNodeActionsToExamine = 15;
+    private int m_CurrentActionIndex = 0;
+    private int m_MaxActionIndex;
+    private int m_MaxAmountOfNodeActionsToExamine = 30;
     
     private Analysis m_Analysis;
     
@@ -83,11 +84,10 @@ class Node
 /*------------------------------------------------------------------------*/   
     
     // Constructor
-    public Node(int maxPlayer, int minPlayer, Node parent, GameState gameState, float evaluationBound, Analysis analysis, long endTime) throws Exception
+    public Node(int maxPlayer, int minPlayer, Node parent, GameState gameState, Analysis analysis, long endTime) throws Exception
     {
         m_Parent = parent;
         m_GameState = gameState;
-        m_EvaluationBound = evaluationBound;
         m_Analysis = analysis;
         
         // The node initialised with a null parent is the tree's root node with depth 0, otherwise it is the next depth layer down from the parent's depth
@@ -99,16 +99,20 @@ class Node
               !m_GameState.gameover() &&
               !m_GameState.canExecuteAnyAction(maxPlayer) && 
               !m_GameState.canExecuteAnyAction(minPlayer)) m_GameState.cycle();
- /*       
+        
         // Check that the gameState and winner is still valid for playing on
         if (m_GameState.winner() == -1 || !m_GameState.gameover())
         {
         	// Initialise and randomise the PlayerActionGenerator for this node based on the player number
+        	// This then analyses the m_ActionGenerator, systematically simulating and analysing the playerAction. This returns a list of playerActions ordered by how favourable
+        	// the Analysis has decided it is based on heuristics set in the opening of the getAction() being called
 	        if (m_GameState.canExecuteAnyAction(maxPlayer))
 	        {
 	            m_ActionGenerator = new PlayerActionGenerator(gameState, maxPlayer);
 	            m_ActionGenerator.randomizeOrder();
 	            m_OrderedActionList = analysis.AnalyseAndSortActionSpace(m_ActionGenerator, m_GameState, endTime);
+	            
+	            // Set the max for the iterator. this ensures that simulations are only performed on the top scoring actions
 	            if (m_OrderedActionList.size() > m_MaxAmountOfNodeActionsToExamine) m_MaxActionIndex = m_MaxAmountOfNodeActionsToExamine;
 	            else m_MaxActionIndex = m_OrderedActionList.size();
 	        }
@@ -117,66 +121,47 @@ class Node
 	            m_ActionGenerator = new PlayerActionGenerator(gameState, minPlayer);
 	            m_ActionGenerator.randomizeOrder();
 	            m_OrderedActionList = analysis.AnalyseAndSortActionSpace(m_ActionGenerator, m_GameState, endTime);
+	            
 	            if (m_OrderedActionList.size() > m_MaxAmountOfNodeActionsToExamine) m_MaxActionIndex = m_MaxAmountOfNodeActionsToExamine;
 	            else m_MaxActionIndex = m_OrderedActionList.size();
 	        }
         }
-*/
-
-        if (m_GameState.winner() == -1 || !m_GameState.gameover())
-        {
-        	// Initialise and randomise the PlayerActionGenerator for this node based on the player number
-	        if (m_GameState.canExecuteAnyAction(maxPlayer))
-	        {
-	            m_ActionGenerator = new PlayerActionGenerator(gameState, maxPlayer);
-	            m_ActionGenerator.randomizeOrder();
-	        }
-	        else if (m_GameState.canExecuteAnyAction(minPlayer))
-	        {
-	            m_ActionGenerator = new PlayerActionGenerator(gameState, minPlayer);
-	            m_ActionGenerator.randomizeOrder();
-	        }
-        }
-        
     }
     
     // Returns a new Node linked to a new unexplored player action in the m_ActionMap as the PlayerAction's key
     public Node selectNewAction(int maxPlayer, int minPlayer, long endTime, int maxTreeDepth) throws Exception
     {
         // Do a depth check. This AI will explore up to a predefined depth as the end of the game is often too far away
-        if (m_CurrentTreeDepth >= maxTreeDepth) return this;        
+        if (m_CurrentTreeDepth >= maxTreeDepth || m_OrderedActionList.size() == 0) return this;
         
-        // If this node has unexplored actions, else look at best child child determined by UCB.
-    	if (m_HasUnexploredActions)
+		// If no actions found
+        if (m_ActionGenerator == null) return this;
+        
+        // Check the iterator against the max allowed amount
+        if (m_CurrentActionIndex < m_MaxActionIndex)
         {
-    		// If no more actions
-            if (m_ActionGenerator == null) return this;
+        	// Get the next action in the ordered list
+            m_Action = m_OrderedActionList.get(m_CurrentActionIndex).m_a;
             
-            // Move to the next (randomised order on initialisation) action available
-    		PlayerAction nextAction = m_ActionGenerator.getNextAction(endTime);
+            // increment the iterator
+            m_CurrentActionIndex++;
             
-    		// Check if last action that is available has been reached (next will be null)
-    		if (nextAction != null)
-            {
-    			// Clone the gameState from after the command
-    			GameState simulatedGameState = m_GameState.cloneIssue(nextAction);                
-                
-    			// Constructor takes for new child takes 'this' as parent argument
-        		Node newChildNode = new Node(maxPlayer, minPlayer, this, simulatedGameState.clone(), m_EvaluationBound, m_Analysis, endTime);
-                
-        		// Store action in map with newNode as key to retrieve if necessary were this node chosen as final move
-    			m_ActionMap.put(newChildNode, nextAction);
-        		
-    			// Add to children list. This is later cycled through to find the best child of a node
-                m_ChildrenList.add(newChildNode);
-                
-                return newChildNode;                
-            }
-            else
-            {
-            	// Stop future iterations from trying to explore new actions from this node
-                m_HasUnexploredActions = false;
-            }
+            // Sanity check, the list should not add a null value. Perhaps if there are no available actions
+            if (m_Action == null) return null;
+            
+            // Clone the gameState from the action being issued
+			m_SimulatedGameState = m_GameState.cloneIssue(m_Action);
+            
+			// New child node constructor takes 'this' as parent argument and the cloneIssued gameState as it's current state
+    		Node newChildNode = new Node(maxPlayer, minPlayer, this, m_SimulatedGameState.clone(), m_Analysis, endTime);
+            
+    		// Store action in map with newNode as key to retrieve if necessary were this node chosen as final move
+			m_ActionMap.put(newChildNode, m_Action);
+    		
+			// Add to children list. This is later cycled through to find the best child of a node
+            m_ChildrenList.add(newChildNode);
+            
+            return newChildNode;
         }
         
         // Temporary variables
@@ -204,270 +189,15 @@ class Node
     public double UCBScore(Node child)
     {
     	// Tweak the constant. Dynamic? How...
-    	//C = 0.707f;
+    	//C = 1.0f;
     	
     	return child.getScore()/child.getVisitCount() + C * Math.sqrt(2 * Math.log((double)child.getParent().getVisitCount())/child.getVisitCount());
     }
 }
 
-
-// The AI class
-public class TRex extends AI//WithComputationBudget implements InterruptibleAI
-{
-	// C needs a lot of tweaking
-    float C = 0.05f;
-	
-	// Game evaluation function that returns a value based on units and resources available
-//    EvaluationFunction ORIGINAL_EVALUATION_FUNCTION = new SimpleSqrtEvaluationFunction3();
-    DinoEvaluation evaluationFunction;
-    EvaluationFunction EVALUATION_FUNCTION = new SimpleSqrtEvaluationFunction3();
-    
-    // Simulations require an opponent to play out against, RandomBiasedAI is a slightly stronger opponent than RandomAI, Or maybe choose stronger?
-    AI simulationEnemyAI = new RandomBiasedAI();
-    
-    Node tree;
-    GameState initialGameState;
-    
-    // The time allowance that is given to the main loop before breaking and finding the best found child
-    int MAXSIMULATIONTIME = 100;
-    
-    // The look ahead depth allowance of nodes in the tree
-    int MAX_TREE_DEPTH;
-    
-    // If doing a NSimulate evaluation then average random play outs over this many simulations
-    int SIMULATION_PLAYOUTS;
-    
-    int totalNodeVisits;
-    
-    // The 0 or 1 identifier number of this player
-    int playerNumber;
-    
-    // For finding the near side resources
-    int halfMapDistance;
-    
-    int playerNumberDifference;
-    
-    // for epsilon greedy?
-//    Random random = new Random();
-    
-    // Used if needed in the initialising of an opponent AI
-    UnitTypeTable unitTypeTable;
-    PhysicalGameState physicalGameState;
-    
-    float evaluationBound = 1;
-    long endTime;
-    
-    UnitType baseType;
-    UnitType workerType;
-    
-
-    
-    Analysis analysis;
-    
-    
-    public TRex(UnitTypeTable utt) {
-    	unitTypeTable = utt;
-        baseType = utt.getUnitType("Base");
-        workerType = utt.getUnitType("Worker");
-        evaluationFunction = new DinoEvaluation(unitTypeTable);
-    }      
-    
-    
-    public TRex() {
-    }
-    
-    
-    public void reset() {
-        tree = null;
-        initialGameState = null;
-        totalNodeVisits = 0;
-        simulationEnemyAI = new RandomBiasedAI();
-    }
-    
-    
-    public void resetSearch() {
-        tree = null;
-        initialGameState = null;
-        totalNodeVisits = 0;
-        simulationEnemyAI = new RandomBiasedAI();
-    }
-    
-    
-    public AI clone() {
-        return new TRex();
-    }  
-    
-    
-    public PlayerAction getAction(int player, GameState gameState) throws Exception
-    {
-        playerNumber = player;
-        initialGameState = gameState;
-    	totalNodeVisits = 0;
-    	
-        if (!gameState.canExecuteAnyAction(player)) return new PlayerAction();
-        
-        // Used to estimate the look ahead max tree depth heuristic
-        physicalGameState = gameState.getPhysicalGameState();
-        
-        // Epsilon greedy?
- //       if (random.nextFloat() < 0.07f) return new PlayerActionGenerator(gameState, player).getRandom();
-        
-        // Simulate against the best heuristic quick time algorithm possible / available
-//        simulationEnemyAI = new Brontosaurus(unitTypeTable);
-        
-        
-        // Cartesian derived heuristic for a lookahead amount, halfway plus a bit
-        MAX_TREE_DEPTH = 10;// (physicalGameState.getWidth() * 2);// + physicalGameState.getHeight());///2 + 2;
-        SIMULATION_PLAYOUTS = 30;
-        
-        // Time limit
-        endTime = System.currentTimeMillis() + MAXSIMULATIONTIME;
-        
-        // For determining nearby resources
-        halfMapDistance = (physicalGameState.getWidth() + physicalGameState.getHeight()) / 2 + 1;
-        
-        analysis = new Analysis(halfMapDistance, baseType, workerType);
-        analysis.initRoot(playerNumber, gameState, evaluationBound, endTime);
-        analysis.analyseGameState();
-        
-        int gameStateTime = gameState.getTime();
-        
-        if 		(gameStateTime < 100) 	analysis.setAnalysisWeightings(100.0f,	1.0f,	100.0f,	0.0f,	0.0f,	6);
-        else if (gameStateTime < 300)	analysis.setAnalysisWeightings(50.0f,	1.0f,	100.0f,	5.0f,	100.0f,	8);
-        else if (gameStateTime < 600)	analysis.setAnalysisWeightings(10.0f,	0.2f,	100.0f,	8.0f,	50.0f,	halfMapDistance);
-        else if (gameStateTime < 1000)	analysis.setAnalysisWeightings(5.0f,	0.0f,	100.0f,	10.0f,	20.0f,	halfMapDistance*2);
-        else if (gameStateTime < 2000)	analysis.setAnalysisWeightings(5.0f,	0.0f,	100.0f,	10.0f,	10.0f,	halfMapDistance*2);
-        else if (gameStateTime < 5000)	analysis.setAnalysisWeightings(0.0f,	0.0f,	100.0f,	10.0f,	0.0f,	halfMapDistance*2);
-  
-/*
-        playerNumberDifference = tree.getPlayerUnitDifference();
-        
-        if		(tree.getEnemyListSize() <= 2 && gameState.getTime() > 1000)	tree.setAnalysisWeightings(0.0f,	0.0f,	100.0f,	10.0f,	0.0f,	halfMapDistance*2);
-        else if (playerNumberDifference < 2) 	tree.setAnalysisWeightings(100.0f,	10.0f,	40.0f,	0.0f,	0.0f,	6);
-        else if (playerNumberDifference < 3)	tree.setAnalysisWeightings(50.0f,	1.0f,	100.0f,	5.0f,	100.0f,	8);
-        else if (playerNumberDifference < 4)	tree.setAnalysisWeightings(10.0f,	0.2f,	100.0f,	8.0f,	50.0f,	halfMapDistance);
-        else if (playerNumberDifference < 5)	tree.setAnalysisWeightings(5.0f,	0.0f,	100.0f,	10.0f,	20.0f,	halfMapDistance*2);
-        else if (playerNumberDifference < 6)	tree.setAnalysisWeightings(5.0f,	0.0f,	100.0f,	10.0f,	10.0f,	halfMapDistance*2);
-        else if (gameState.getTime() > 4000)	tree.setAnalysisWeightings(0.0f,	0.0f,	100.0f,	10.0f,	0.0f,	halfMapDistance*2);
-*/       
-        
-        // Initialise the tree as a new Node with parent = null
-        tree = new Node(playerNumber, 1-playerNumber, null, gameState.clone(), evaluationBound, analysis, endTime);
-        
-        // Main loop
-        while(true)
-        {
-        	// Breaks out when the time exceeds
-            if (System.currentTimeMillis() > endTime) break;
-            
-        	// Tries to get a new unexplored action from the tree
-            Node newNode = tree.selectNewAction(playerNumber, 1-playerNumber, endTime, MAX_TREE_DEPTH);
-            
-            // If no new actions then null is returned
-            if (newNode != null)
-            {
-            	// Clone the gameState for use in the simulation
-                GameState gameStateClone = newNode.getGameState().clone();
-                
-                // Simulate a play out of that gameState
-                simulate(gameStateClone, gameStateClone.getTime() + MAXSIMULATIONTIME);
-                
-                // Not too sure here, the evaluation tends towards zero as the time increases
-                int time = gameStateClone.getTime() - initialGameState.getTime();
-                double evaluation = EVALUATION_FUNCTION.evaluate(playerNumber, 1-playerNumber, gameStateClone) * Math.pow(0.99,time/10.0);
-
-                // Back propagation, cycle though each node's parents until the tree root is reached
-                while(newNode != null)
-                {
-                    newNode.addScore(evaluation);
-                    newNode.incrementVisitCount();
-                    newNode = newNode.getParent();
-                }
-            }
-        }
-        
-        // Sanity check
-        if (tree.getChildrenList() == null) return new PlayerAction();
-        
-        // Temporary variable
-        Node tempMostVisited = null;
-        
-        for (Node child : tree.getChildrenList())
-        {
-        	// if no other value has been assigned then assign child
-            if (tempMostVisited == null ||
-            		// or if child is better than temp variable then replace
-            		child.getVisitCount() > tempMostVisited.getVisitCount() ||
-            		// or if visits are the same but child's score is better then replace
-            		(child.getVisitCount() == tempMostVisited.getVisitCount() && child.getScore() > tempMostVisited.getScore()))
-            {
-            	// Update temporary variable
-                tempMostVisited = child;
-            }
-        }
-        
-        // Sanity check
-        if (tempMostVisited == null) return new PlayerAction();
-        
-        // m_ActionMap getter
-        return tree.getActionFromChildNode(tempMostVisited);
-    }
-      
-    
-
-/*    
- * ---------------------------------
- * This could be a better simulation environment? Averaging N play outs.
- * ---------------------------------
- *     
-*/
-    // gets the best action, evaluates it for 'N' times using a simulation, and returns the average obtained value:
-    public float NSimulate(GameState gameStateClone, int player, int N) throws Exception
-    {
-        float accum = 0;
-        for(int i = 0; i < N; i++)
-        {
-            GameState thisNGS = gameStateClone.clone();
-            simulate(thisNGS,thisNGS.getTime() + MAXSIMULATIONTIME);
-            int time = thisNGS.getTime() - gameStateClone.getTime();
-            // Discount factor:
-//            accum += (float)(ORIGINAL_EVALUATION_FUNCTION.evaluate(player, 1-player, thisNGS)*Math.pow(0.99,time/10.0));
-            accum += (float)(evaluationFunction.evaluate(player, 1-player, thisNGS)*Math.pow(0.99,time/10.0));
-        }
-            
-        return accum/N;
-    }    
-    
-    
-    public void simulate(GameState gameState, int time) throws Exception
-    {
-        boolean gameover = false;
-
-        do
-        {
-            if (gameState.isComplete())
-            {
-                gameover = gameState.cycle();
-            }
-            else
-            {
-                gameState.issue(simulationEnemyAI.getAction(0, gameState));
-                gameState.issue(simulationEnemyAI.getAction(1, gameState));
-            }
-        }while(!gameover && gameState.getTime() < time);   
-    }
-    
-    @Override
-    public List<ParameterSpecification> getParameters()
-    {
-        return new ArrayList<>();
-    }
-}
-
 class Analysis
 {
-//	private Node m_Root;
-	private GameState m_GameState = null;
+	private GameState m_GameState;
 	
 	private int m_PlayerNumber;
 	private UnitType m_WorkerType;
@@ -479,8 +209,6 @@ class Analysis
 	
     private List<Unit> m_ResourceUnitList = new ArrayList<>();
     private List<Unit> m_EnemyList = new ArrayList<>();
-    
-    private List<Node> m_NodesToExplore = new ArrayList<>();
 	
 	private float m_HarvestWeight;
 	private float m_MoveToHarvestWeight;
@@ -489,30 +217,19 @@ class Analysis
 	private float m_ProduceWeight;
     private int m_AttackDistance;
 	
-//    public VelNode getRoot() { return m_Root; }
-    public void addNodeToExplore(Node node) { m_NodesToExplore.add(node); }
-    public void removeNodeToExplore(Node node) { m_NodesToExplore.remove(node); }
-    public int getNumberOfNodesToExplore() { return m_NodesToExplore.size(); }
     public int getPlayerUnitDifference() { return m_FriendlyCount - m_EnemyList.size(); }
     public int getEnemyListSize() { return m_EnemyList.size(); }
 
 /*------------------------------------------------------------------------*/   
     
-    public Analysis(int halfMapDistance, UnitType baseType, UnitType workerType) throws Exception
+    public Analysis(int playerNumber, GameState gameState, int halfMapDistance, UnitType baseType, UnitType workerType) throws Exception
 	{
-//		m_Root = new Node(this, playerNumber, 1-playerNumber, null, m_GameState, evaluationBound, endTime);
 		m_HalfMapDistance = halfMapDistance;
 		m_BaseType = baseType;
 		m_WorkerType = workerType;
-	}
-    
-    public void initRoot(int playerNumber, GameState gameState, float evaluationBound, long endTime) throws Exception
-    {
-//		m_Root = new Node(this, playerNumber, 1-playerNumber, null, gameState, evaluationBound, endTime);
-//		m_NodesToExplore.add(m_Root);
 		m_GameState = gameState;
 		m_PlayerNumber = playerNumber;
-    }
+	}
     
     public void setAnalysisWeightings(float harvestWeight, float moveToHarvestWeight, float attackWeight, float produceWeight, float moveToAttackWeight, int attackDistance)
     {
@@ -527,18 +244,19 @@ class Analysis
 	void analyseGameState()
 	{
 		m_FriendlyCount = 0;
-		// Spend some loops getting the player's base locations and all resource locations
 		
-		// Eventually only need to get locations once? Can check if they are still available at the start of each getAction()
+		// Spend some loops getting the player's base location, All enemy locations, and all resource locations
     	for (Unit unit : m_GameState.getUnits())
     	{
     		if (unit.getPlayer() == m_PlayerNumber)
     		{
     			m_FriendlyCount++;
     			
-    			if (unit.getType() == m_BaseType)
+    			// No need to keep looking for it once it has been found. Assumes one base per player
+	    		if (m_Base == null)
 	    		{
-	    			if (m_Base == null)
+    				// Check for this player's base
+	    			if (unit.getType() == m_BaseType)
 	    			{
 	    				m_Base = unit;
 	    			}
@@ -546,10 +264,11 @@ class Analysis
     		}
     		if (unit.getPlayer() == 1-m_PlayerNumber)
     		{
-    			// Set something to do with enemy locations, add to list maybe, ...
+    			// Store the enemies in a list
     			m_EnemyList.add(unit);
     		}
     	}
+    	// Once the initial pass has completed do another loop for resources if Base has been found
     	if (m_Base != null)
     	{
     		// If base is available then check for harvesting actions
@@ -566,6 +285,7 @@ class Analysis
     		}
     	}
 	}
+	
 	
     public List<Pair<PlayerAction, Float>> AnalyseAndSortActionSpace(PlayerActionGenerator actionGenerator, GameState gameState, long cutOffTime) throws Exception
     {
@@ -723,6 +443,257 @@ class Analysis
 		return actionScore;
     }
 
+}
+
+
+// The AI class
+public class TRex extends AI//WithComputationBudget implements InterruptibleAI
+{
+	// C needs a lot of tweaking
+    float C = 0.05f;
+	
+	// Game evaluation function that returns a value based on units and resources available
+//    EvaluationFunction ORIGINAL_EVALUATION_FUNCTION = new SimpleSqrtEvaluationFunction3();
+    DinoEvaluation evaluationFunction;
+    EvaluationFunction EVALUATION_FUNCTION = new SimpleSqrtEvaluationFunction3();
+    
+    // Simulations require an opponent to play out against, RandomBiasedAI is a slightly stronger opponent than RandomAI, Or maybe choose stronger?
+    AI simulationEnemyAI = new RandomBiasedAI();
+    
+    Node treeRootNode;
+    GameState initialGameState;
+    
+    // The time allowance that is given to the main loop before breaking and finding the best found child
+    int MAXSIMULATIONTIME = 100;
+    
+    // The look ahead depth allowance of nodes in the tree
+    int MAX_TREE_DEPTH;
+    
+    // If doing a NSimulate evaluation then average random play outs over this many simulations
+    int SIMULATION_PLAYOUTS;
+    
+    int totalNodeVisits;
+    
+    // The 0 or 1 identifier number of this player
+    int playerNumber;
+    
+    // For finding the near side resources
+    int halfMapDistance;
+    
+    int playerNumberDifference;
+    
+    // for epsilon greedy?
+//    Random random = new Random();
+    
+    // Used if needed in the initialising of an opponent AI
+    UnitTypeTable unitTypeTable;
+    UnitType baseType;
+    UnitType workerType;
+    
+    PhysicalGameState physicalGameState;
+    
+    float evaluationBound = 1;
+    long endTime;
+    
+    Analysis analysis;
+    
+    public TRex(UnitTypeTable utt) {
+    	unitTypeTable = utt;
+        baseType = utt.getUnitType("Base");
+        workerType = utt.getUnitType("Worker");
+        evaluationFunction = new DinoEvaluation(unitTypeTable);
+    }      
+    
+    
+    public TRex() {
+    }
+    
+    
+    public void reset() {
+        totalNodeVisits = 0;
+        simulationEnemyAI = new RandomBiasedAI();
+    }
+    
+    
+    public void resetSearch() {
+        totalNodeVisits = 0;
+        simulationEnemyAI = new RandomBiasedAI();
+    }
+    
+    
+    public AI clone() {
+        return new TRex();
+    }  
+    
+    
+    public PlayerAction getAction(int player, GameState gameState) throws Exception
+    {
+        playerNumber = player;
+        initialGameState = gameState;
+    	totalNodeVisits = 0;
+    	
+        if (!gameState.canExecuteAnyAction(player)) return new PlayerAction();
+        
+        // Epsilon greedy?
+ //       if (random.nextFloat() < 0.07f) return new PlayerActionGenerator(gameState, player).getRandom();
+        
+        // Simulate against the best heuristic quick time algorithm possible / available
+//        simulationEnemyAI = new Brontosaurus(unitTypeTable);
+        
+        
+        MAX_TREE_DEPTH = 10;
+        SIMULATION_PLAYOUTS = 10;
+        
+        // Time limit
+        endTime = System.currentTimeMillis() + MAXSIMULATIONTIME;
+        
+        // For determining nearby resources
+        physicalGameState = gameState.getPhysicalGameState();
+        halfMapDistance = (physicalGameState.getWidth() + physicalGameState.getHeight()) / 2 + 1;
+        
+        analysis = new Analysis(playerNumber, gameState, halfMapDistance, baseType, workerType);
+        analysis.analyseGameState();
+        
+        int gameStateTime = gameState.getTime();
+        
+        if 		(gameStateTime < 100) 	analysis.setAnalysisWeightings(100.0f,	1.0f,	100.0f,	0.0f,	0.0f,	6);
+        else if (gameStateTime < 300)	analysis.setAnalysisWeightings(50.0f,	1.0f,	100.0f,	5.0f,	100.0f,	8);
+        else if (gameStateTime < 600)	analysis.setAnalysisWeightings(10.0f,	0.2f,	100.0f,	8.0f,	50.0f,	halfMapDistance);
+        else if (gameStateTime < 1000)	analysis.setAnalysisWeightings(5.0f,	0.0f,	100.0f,	10.0f,	20.0f,	halfMapDistance*2);
+        else if (gameStateTime < 2000)	analysis.setAnalysisWeightings(5.0f,	0.0f,	100.0f,	10.0f,	10.0f,	halfMapDistance*2);
+        else 							analysis.setAnalysisWeightings(0.0f,	0.0f,	100.0f,	10.0f,	0.0f,	halfMapDistance*2);
+  
+/*
+        playerNumberDifference = tree.getPlayerUnitDifference();
+        
+        if		(tree.getEnemyListSize() <= 2 && gameState.getTime() > 1000)	tree.setAnalysisWeightings(0.0f,	0.0f,	100.0f,	10.0f,	0.0f,	halfMapDistance*2);
+        else if (playerNumberDifference < 2) 	tree.setAnalysisWeightings(100.0f,	10.0f,	40.0f,	0.0f,	0.0f,	6);
+        else if (playerNumberDifference < 3)	tree.setAnalysisWeightings(50.0f,	1.0f,	100.0f,	5.0f,	100.0f,	8);
+        else if (playerNumberDifference < 4)	tree.setAnalysisWeightings(10.0f,	0.2f,	100.0f,	8.0f,	50.0f,	halfMapDistance);
+        else if (playerNumberDifference < 5)	tree.setAnalysisWeightings(5.0f,	0.0f,	100.0f,	10.0f,	20.0f,	halfMapDistance*2);
+        else if (playerNumberDifference < 6)	tree.setAnalysisWeightings(5.0f,	0.0f,	100.0f,	10.0f,	10.0f,	halfMapDistance*2);
+        else if (gameState.getTime() > 4000)	tree.setAnalysisWeightings(0.0f,	0.0f,	100.0f,	10.0f,	0.0f,	halfMapDistance*2);
+*/       
+        
+        // Initialise the tree as a new Node with parent = null
+        treeRootNode = new Node(playerNumber, 1-playerNumber, null, gameState.clone(), analysis, endTime);
+        
+        // Main loop
+        while (true)
+        {
+        	// Breaks out when the time exceeds
+            if (System.currentTimeMillis() > endTime) break;
+            
+        	// Tries to get a new unexplored action from the tree
+            Node newNode = treeRootNode.selectNewAction(playerNumber, 1-playerNumber, endTime, MAX_TREE_DEPTH);
+            
+            // If no new actions then null is returned
+            if (newNode != null)
+            {
+            	// Clone the gameState for use in the simulation
+                GameState gameStateClone = newNode.getGameState().clone();
+                
+                // Simulate a play out of that gameState
+                simulate(gameStateClone, gameStateClone.getTime() + MAXSIMULATIONTIME);
+                
+                // Not too sure here, the evaluation tends towards zero as the time increases
+                int time = gameStateClone.getTime() - initialGameState.getTime();
+                double evaluation = EVALUATION_FUNCTION.evaluate(playerNumber, 1-playerNumber, gameStateClone) * Math.pow(0.99,time/10.0);//evaluationFunction//
+
+                // Back propagation, cycle though each node's parents until the tree root is reached
+                while(newNode != null)
+                {
+                    newNode.addScore(evaluation);
+                    newNode.incrementVisitCount();
+                    newNode = newNode.getParent();
+                }
+            }
+        }
+        
+        // Sanity check
+        if (treeRootNode.getChildrenList() == null)
+        {
+        	System.out.println("Nope");
+        	return simulationEnemyAI.getAction(player, gameState);// new PlayerAction();
+       	}
+        
+        // Temporary variable
+        Node tempMostVisited = null;
+        
+        for (Node child : treeRootNode.getChildrenList())
+        {
+        	// if no other value has been assigned then assign child
+            if (tempMostVisited == null ||
+            		// or if child is better than temp variable then replace
+            		child.getVisitCount() > tempMostVisited.getVisitCount() ||
+            		// or if visits are the same but child's score is better then replace
+            		(child.getVisitCount() == tempMostVisited.getVisitCount() && child.getScore() > tempMostVisited.getScore()))
+            {
+            	// Update temporary variable
+                tempMostVisited = child;
+            }
+        }
+        
+        // Sanity check
+        if (tempMostVisited == null)
+        {
+        	System.out.println("Noooooope");
+        	return simulationEnemyAI.getAction(player, gameState);// new PlayerAction();
+       	}
+        
+        // m_ActionMap getter
+        return treeRootNode.getActionFromChildNode(tempMostVisited);
+    }
+      
+    
+
+/*    
+ * ---------------------------------
+ * This could be a better simulation environment? Averaging N play outs.
+ * ---------------------------------
+ *     
+*/
+    // gets the best action, evaluates it for 'N' times using a simulation, and returns the average obtained value:
+    public float NSimulate(GameState gameStateClone, int player, int N) throws Exception
+    {
+        float accum = 0;
+        for(int i = 0; i < N; i++)
+        {
+            GameState thisNGS = gameStateClone.clone();
+            simulate(thisNGS,thisNGS.getTime() + MAXSIMULATIONTIME);
+            int time = thisNGS.getTime() - gameStateClone.getTime();
+            // Discount factor:
+//            accum += (float)(ORIGINAL_EVALUATION_FUNCTION.evaluate(player, 1-player, thisNGS)*Math.pow(0.99,time/10.0));
+            accum += (float)(evaluationFunction.evaluate(player, 1-player, thisNGS)*Math.pow(0.99,time/10.0));
+        }
+            
+        return accum/N;
+    }    
+    
+    
+    public void simulate(GameState gameState, int time) throws Exception
+    {
+        boolean gameover = false;
+
+        do
+        {
+            if (gameState.isComplete())
+            {
+                gameover = gameState.cycle();
+            }
+            else
+            {
+                gameState.issue(simulationEnemyAI.getAction(0, gameState));
+                gameState.issue(simulationEnemyAI.getAction(1, gameState));
+            }
+        }while(!gameover && gameState.getTime() < time);   
+    }
+    
+    @Override
+    public List<ParameterSpecification> getParameters()
+    {
+        return new ArrayList<>();
+    }
 }
 
 class TRexEvaluation extends EvaluationFunction
