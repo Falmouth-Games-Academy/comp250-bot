@@ -32,8 +32,8 @@ public class TRex extends AI//WithComputationBudget implements InterruptibleAI
 	
 	// Game evaluation function that returns a value based on units and resources available
 //    EvaluationFunction ORIGINAL_EVALUATION_FUNCTION = new SimpleSqrtEvaluationFunction3();
-    DinoEvaluation evaluationFunction;
-    EvaluationFunction EVALUATION_FUNCTION = new SimpleSqrtEvaluationFunction3();
+//    DinoEvaluation evaluationFunction;
+    EvaluationFunction evaluationFunction = new SimpleSqrtEvaluationFunction3();
     
     // Simulations require an opponent to play out against, RandomBiasedAI is a slightly stronger opponent than RandomAI, Or maybe choose stronger?
     AI simulationEnemyAI = new RandomBiasedAI();
@@ -79,7 +79,7 @@ public class TRex extends AI//WithComputationBudget implements InterruptibleAI
     	unitTypeTable = utt;
         baseType = utt.getUnitType("Base");
         workerType = utt.getUnitType("Worker");
-        evaluationFunction = new DinoEvaluation(unitTypeTable);
+//        evaluationFunction = new DinoEvaluation(unitTypeTable);
     }      
     
     
@@ -183,7 +183,7 @@ public class TRex extends AI//WithComputationBudget implements InterruptibleAI
                 
                 // Not too sure here, the evaluation tends towards zero as the time increases
                 int time = gameStateClone.getTime() - initialGameState.getTime();
-                double evaluation = EVALUATION_FUNCTION.evaluate(playerNumber, 1-playerNumber, gameStateClone) * Math.pow(0.99,time/10.0);//evaluationFunction//
+                double evaluation = evaluationFunction.evaluate(playerNumber, 1-playerNumber, gameStateClone) * Math.pow(0.99,time/10.0);//evaluationFunction//
 
                 // Back propagation, cycle though each node's parents until the tree root is reached
                 while(newNode != null)
