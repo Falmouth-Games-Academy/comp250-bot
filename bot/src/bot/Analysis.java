@@ -147,8 +147,10 @@ public class Analysis
     	
     	m_OverflowCheckIterator = 0;
     	
-    	while (/*m_OverflowCheckIterator < 1 || */gameState.getTime() < cutOffTime)// true)
+    	while (true)// /*m_OverflowCheckIterator < 1 || */gameState.getTime() < cutOffTime)// true)
     	{
+    		if (m_OverflowCheckIterator%3 == 0) if (gameState.getTime() > cutOffTime) break;
+    		
     		m_OverflowCheckIterator++;
     		
     		// Go through all the playerActions generated on construction
@@ -173,7 +175,7 @@ public class Analysis
     	// Sorted set here
     	// Write own clone function that overwites not creates new
     	
-    	if (actionList.size() > 1 && gameState.getTime() < cutOffTime)
+    	if (actionList.size() > 1)// && gameState.getTime() < cutOffTime)
     	{
 	    	Collections.sort(actionList, new Comparator<Pair<PlayerAction, Float>>()
 	    			{

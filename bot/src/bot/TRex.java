@@ -42,7 +42,7 @@ public class TRex extends AI//WithComputationBudget implements InterruptibleAI
     GameState initialGameState;
     
     // The time allowance that is given to the main loop before breaking and finding the best found child
-    int MAXSIMULATIONTIME = 100;
+    int MAXSIMULATIONTIME = 130;
     
     // The look ahead depth allowance of nodes in the tree
     int MAX_TREE_DEPTH;
@@ -120,9 +120,10 @@ public class TRex extends AI//WithComputationBudget implements InterruptibleAI
         
         
         MAX_TREE_DEPTH = 10;
-        SIMULATION_PLAYOUTS = 10;
+        SIMULATION_PLAYOUTS = 5;
         
         // Time limit
+        endTime = System.currentTimeMillis() + MAXSIMULATIONTIME;
         
         // For determining nearby resources
         physicalGameState = gameState.getPhysicalGameState();
@@ -160,8 +161,6 @@ public class TRex extends AI//WithComputationBudget implements InterruptibleAI
         
         // Initialise the tree as a new Node with parent = null
         treeRootNode = new Node(playerNumber, 1-playerNumber, null, gameState.clone(), analysis, endTime);
-        
-        endTime = System.currentTimeMillis() + MAXSIMULATIONTIME;
         
         
         // Main loop
@@ -227,10 +226,10 @@ public class TRex extends AI//WithComputationBudget implements InterruptibleAI
         // Sanity check
         if (tempMostVisited == null)
         {
-        	System.out.println("Noooooope");
+//        	System.out.println("Noooooope");
         	return simulationEnemyAI.getAction(player, gameState);// new PlayerAction();
        	}
-        
+//        System.out.println("Success");
         // m_ActionMap getter
         return treeRootNode.getActionFromChildNode(tempMostVisited);
     }

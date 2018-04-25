@@ -130,6 +130,7 @@ public class MyPlayerActionGenerator {
     
     public PlayerAction getNextAction(long cutOffTime) throws Exception {
         int count = 0;
+        int count2 = 0;
         while(moreActions) {
             boolean consistent = true;
             PlayerAction pa = new PlayerAction();
@@ -139,11 +140,12 @@ public class MyPlayerActionGenerator {
             while(i>0) {
             	
             	// Stop timing out!!!
-            	if (System.currentTimeMillis() > cutOffTime)
+            	if (count%10==0 && System.currentTimeMillis() > cutOffTime)
             	{
             		//System.out.println("Puta");
             		return null;
             	}
+            	count++;
             	
                 i--;
                 Pair<Unit,List<UnitAction>> unitChoices = choices.get(i);
@@ -170,11 +172,11 @@ public class MyPlayerActionGenerator {
             }
             
             // check if we are over time (only check once every 1000 actions, since currenttimeMillis is a slow call):
-            if (cutOffTime>0 && /*(count%1000==0) &&*/ System.currentTimeMillis()>cutOffTime) {
+            if (cutOffTime>0 && (count2%10==0) && System.currentTimeMillis()>cutOffTime) {
                 lastAction = null;
                 return null;
             }
-            count++;
+            count2++;
         }
         lastAction = null;
         return null;
