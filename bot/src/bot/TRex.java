@@ -167,7 +167,7 @@ public class TRex extends AI//WithComputationBudget implements InterruptibleAI
         while (true)
         {
         	// Breaks out when the time exceeds
- //           if (System.currentTimeMillis() > endTime) break;
+            if (System.currentTimeMillis() > endTime) break;
             
         	// Tries to get a new unexplored action from the tree
             Node newNode = treeRootNode.selectNewAction(playerNumber, 1-playerNumber, endTime, MAX_TREE_DEPTH);
