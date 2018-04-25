@@ -59,9 +59,9 @@ public class GameVisualSimulationTest
 			"../microrts/maps/8x8/TwoBasesWorkers8x8.xml",
 			
 			"../microrts/maps/10x10/basesWorkers10x10.xml",
-*/			
+*/	/*		
 			"../microrts/maps/12x12/basesWorkers12x12.xml",
-/*			"../microrts/maps/12x12/complexBasesWorkers12x12.xml",
+			"../microrts/maps/12x12/complexBasesWorkers12x12.xml",
 			"../microrts/maps/12x12/FourBasesWorkers12x12.xml",
 			"../microrts/maps/12x12/melee12x12Mixed12.xml",
 			"../microrts/maps/12x12/OneBaseWorker12x12.xml",
@@ -70,9 +70,9 @@ public class GameVisualSimulationTest
 			"../microrts/maps/12x12/TwoBasesWorkers12x12.xml",
 			
 			"../microrts/maps/16x16/basesWorkers16x16.xml",
-*/			"../microrts/maps/16x16/basesWorkers16x16A.xml",
+*/	/*		"../microrts/maps/16x16/basesWorkers16x16A.xml",
 			"../microrts/maps/16x16/basesWorkers16x16B.xml",
-/*			"../microrts/maps/16x16/basesWorkers16x16C.xml",
+			"../microrts/maps/16x16/basesWorkers16x16C.xml",
 			"../microrts/maps/16x16/basesWorkers16x16D.xml",
 			"../microrts/maps/16x16/basesWorkers16x16E.xml",
 			"../microrts/maps/16x16/basesWorkers16x16F.xml",
@@ -86,10 +86,10 @@ public class GameVisualSimulationTest
 			"../microrts/maps/16x16/melee16x16Mixed8.xml",
 			"../microrts/maps/16x16/melee16x16Mixed12.xml",
 			"../microrts/maps/16x16/TwoBasesBarracks16x16.xml",
-			
+*/			
 			"../microrts/maps/24x24/basesWorkers24x24.xml",
 			"../microrts/maps/24x24/basesWorkers24x24A.xml",
-			"../microrts/maps/24x24/basesWorkers24x24B.xml",
+/*			"../microrts/maps/24x24/basesWorkers24x24B.xml",
 			"../microrts/maps/24x24/basesWorkers24x24C.xml",
 			"../microrts/maps/24x24/basesWorkers24x24D.xml",
 			"../microrts/maps/24x24/basesWorkers24x24E.xml",
@@ -99,8 +99,8 @@ public class GameVisualSimulationTest
 			"../microrts/maps/24x24/basesWorkers24x24I.xml",
 			"../microrts/maps/24x24/basesWorkers24x24J.xml",
 			"../microrts/maps/24x24/basesWorkers24x24K.xml",
-*/		//	"../microrts/maps/24x24/basesWorkers24x24L.xml",
-/*			
+		//	"../microrts/maps/24x24/basesWorkers24x24L.xml",
+			
 			"../microrts/maps/BroodWar/(2)Benzene.scxA.xml",
 			"../microrts/maps/BroodWar/(2)Destination.scxA.xml",
 			"../microrts/maps/BroodWar/(2)HeartbreakRidge.scxA.xml",
@@ -170,7 +170,7 @@ public class GameVisualSimulationTest
         int PERIOD = 20;
         boolean gameover = false;
         
-        AI ai1 = new RandomBiasedAI();
+        AI ai1 = new Pterodactyl(utt);
         AI ai2 = new TRex(utt);//Brontosaurus(utt);//
 
         JFrame w = PhysicalGameStatePanel.newVisualizer(gs,640,640,false,PhysicalGameStatePanel.COLORSCHEME_BLACK);

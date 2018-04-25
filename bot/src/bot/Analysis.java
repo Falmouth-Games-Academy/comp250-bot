@@ -4,17 +4,24 @@
  */
 package bot;
 
+import java.lang.ref.Reference;
+import java.lang.reflect.Array;
+import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 
 import rts.GameState;
+import rts.PhysicalGameState;
 import rts.PlayerAction;
 import rts.PlayerActionGenerator;
+import rts.ResourceUsage;
 import rts.UnitAction;
+import rts.UnitActionAssignment;
 import rts.units.Unit;
 import rts.units.UnitType;
+import rts.units.UnitTypeTable;
 import util.Pair;
 
 
@@ -44,6 +51,22 @@ public class Analysis
 	private float m_MoveToAttackWeight;
 	private float m_ProduceWeight;
     private int m_AttackDistance;
+    
+    private int m_OverflowCheckIterator = 0;
+    
+    
+
+/*------------------------------------------------------------------------*/   
+    PlayerAction lastAction = null;
+    int currentChoice[] = null;
+    boolean moreActions = true;
+    GameState gs;
+    PhysicalGameState pgs;
+    ResourceUsage base_ru;
+    List<Pair<Unit,List<UnitAction>>> choices;
+    
+    
+/*------------------------------------------------------------------------*/   
 	
     public int getPlayerUnitDifference() { return m_FriendlyCount - m_EnemyList.size(); }
     public int getEnemyListSize() { return m_EnemyList.size(); }
@@ -115,34 +138,42 @@ public class Analysis
 	}
 	
 	
-    public List<Pair<PlayerAction, Float>> AnalyseAndSortActionSpace(PlayerActionGenerator actionGenerator, GameState gameState, long cutOffTime) throws Exception
+    public List<Pair<PlayerAction, Float>> AnalyseAndSortActionSpace(MyPlayerActionGenerator actionGenerator, GameState gameState, long cutOffTime) throws Exception
     {
     	List<Pair<PlayerAction, Float>> actionList = new ArrayList<Pair<PlayerAction, Float>>();
-    	PlayerAction playerAction = null;
     	
-    	while (gameState.getTime() < cutOffTime)// true)
+    	MyPlayerActionGenerator thisActionGenerator = actionGenerator;
+    	float playerActionScore;
+    	
+    	m_OverflowCheckIterator = 0;
+    	
+    	while (/*m_OverflowCheckIterator < 1 || */gameState.getTime() < cutOffTime)// true)
     	{
+    		m_OverflowCheckIterator++;
+    		
     		// Go through all the playerActions generated on construction
-    		playerAction = actionGenerator.getNextAction(cutOffTime);
+    		PlayerAction playerAction = thisActionGenerator.getNextAction(cutOffTime);
     		
     		if (playerAction != null)
-	    	{
-    			// Simulate the action into a cloned gameState
-	    		GameState simulatedGameState = gameState.cloneIssue(playerAction);
-	    		
-	    		// Store as a new Pair in the actionList
-	    		actionList.add(new Pair<>(playerAction, analyseAction(simulatedGameState, playerAction, cutOffTime)));
+    		{
+	    		for (Pair<Unit, UnitAction> unitPair : playerAction.getActions())
+	    		{
+	    			if (unitPair.m_a.getPlayer() == m_PlayerNumber)
+	    			{
+	    				playerActionScore = analyseAction(unitPair.m_a, unitPair.m_b, cutOffTime);
+//	    				cleanThreadLocals();
+	    				actionList.add(new Pair<>(playerAction, playerActionScore));
+	    			}
+	    		}
     		}
-    		// if null then no more actions to process
-    		else break;
+    		else break;   	
     	}
-    	
     	// Heap to avoid sort
     	
     	// Sorted set here
     	// Write own clone function that overwites not creates new
     	
-    	if (actionList.size() > 0 && gameState.getTime() < cutOffTime)
+    	if (actionList.size() > 1 && gameState.getTime() < cutOffTime)
     	{
 	    	Collections.sort(actionList, new Comparator<Pair<PlayerAction, Float>>()
 	    			{
@@ -159,124 +190,151 @@ public class Analysis
 		return actionList;
     }
 	
-    public float analyseAction(GameState gameState, PlayerAction potentialAction, long cutOffTime)
+    public float analyseAction(Unit unit, UnitAction unitAction, long cutOffTime)//GameState gameState, PlayerAction potentialAction, long cutOffTime)
     {
-    	GameState simulatedGameState = gameState.cloneIssue(potentialAction);
-    	
 		float actionScore = 0.0f;
         
 		// For opening moves. The only action is to create more workers so all good
 		// Maybe control the direction in which it is producing workers?
-		if (potentialAction == null || m_FriendlyCount == 0)
+		if (unitAction == null || m_FriendlyCount == 0)//		if (potentialAction == null || m_FriendlyCount == 0)
 		{
-//			System.out.println("THIS SHOULD NOT HAPPEN AFTER FIRST MOVE");
 			return actionScore;
 		}
+
+					
+	// Look at our player
+//		if (potentialAction != null && potentialAction.getAction(unit) != null && gameState.getTime() < cutOffTime)
+//		{
 		
-		// Sanity check as this can become a time expensive function
-		while (gameState.getTime() < cutOffTime)
+		else
 		{
-			// Look at every Unit
-			for (Unit unit : simulatedGameState.getUnits())
+			// Look at the worker units first
+			if (unit.getType() == m_WorkerType)
 			{
-				// Sanity check for nulls
-				if (potentialAction != null && potentialAction.getAction(unit) != null && gameState.getTime() < cutOffTime)
+				// If there is a base then check for harvesting actions
+				if (m_Base != null)
 				{
-					// Look at our player
-					if (unit.getPlayer() == m_PlayerNumber)
+					// If its worth checking this
+					if (m_HarvestWeight > 0)
 					{
-						// Look at the worker units first
-						if (unit.getType() == m_WorkerType)
+						// Check for harvesting or returning actions in this playerAction
+						if (unitAction.getType() == 2 /*UnitAction.TYPE_HARVEST*/ || unitAction.getType() == 3 /*UnitAction.TYPE_RETURN*/)
 						{
-							// If there is a base then check for harvesting actions
-							if (m_Base != null)
-							{
-								// If its worth checking this
-								if (m_HarvestWeight > 0)
-								{
-									// Check for harvesting or returning actions in this playerAction
-									if (potentialAction.getAction(unit).getType() == 2 /*UnitAction.TYPE_HARVEST*/ || potentialAction.getAction(unit).getType() == 3 /*UnitAction.TYPE_RETURN*/)
-									{
-										actionScore += m_HarvestWeight;
-									}
-								}
-								else if (m_MoveToHarvestWeight > 0)
-								{
-									if (potentialAction.getAction(unit).getType() == UnitAction.TYPE_MOVE)
-									{
-										int directionIdentifier = potentialAction.getAction(unit).getDirection();
-										
-										// If it's packing resources
-										if (unit.getResources() > 0)
-										{
-											// Check if moving back towards the base
-											if ((m_Base.getX() - unit.getX() < 0 && directionIdentifier == 3)
-													|| (m_Base.getX() - unit.getX() > 0 && directionIdentifier == 1)
-													|| (m_Base.getY() - unit.getY() < 0 && directionIdentifier == 0) 
-													|| (m_Base.getY() - unit.getY() < 0 && directionIdentifier == 2)) actionScore += m_MoveToHarvestWeight;
-										}
-										// else if it's looking for resources
-										else
-										{
-											int tempDistance;
-											
-											for (Unit resourceUnit : m_ResourceUnitList)
-						    				{
-												tempDistance = Math.abs(unit.getX() - resourceUnit.getX()) + Math.abs(unit.getY() - resourceUnit.getY());
-												
-												// Only add to score if a close worker is moving towards resource
-												if (tempDistance < 8)
-												{
-													// If it needs to go left etc
-													if ((resourceUnit.getX() - unit.getX() < 0 && directionIdentifier == 3/*UnitAction.DIRECTION_LEFT*/)
-														|| (resourceUnit.getX() - unit.getX() > 0 && directionIdentifier == 1/*UnitAction.DIRECTION_RIGHT*/)
-														|| (resourceUnit.getY() - unit.getY() < 0 && directionIdentifier == 0/*UnitAction.DIRECTION_UP*/)
-														|| (resourceUnit.getY() - unit.getY() > 0 && directionIdentifier == 2/*UnitAction.DIRECTION_DOWN*/)) actionScore += m_MoveToHarvestWeight;
-												}
-											}
-										}
-									}
-								}
-							}
+							actionScore += m_HarvestWeight;
 						}
-						// Check for producing (one call not worth a m_ProduceWeight non zero check
-						if (potentialAction.getAction(unit).getType() == 4)
+					}
+					else if (m_MoveToHarvestWeight > 0)
+					{
+						if (unitAction.getType() == UnitAction.TYPE_MOVE)
 						{
-							actionScore += m_ProduceWeight;
-						}
-						
-						// Check for direct attacking (should always have a non zero weighting)
-						if (potentialAction.getAction(unit).getType() == 5)// UnitAction.TYPE_ATTACK_LOCATION)
-						{
-							actionScore += m_AttackWeight;
-						}
-						else if (m_MoveToAttackWeight > 0 && gameState.getTime() < cutOffTime)
-						{
-							// Check for en route attackers
-							// Check against closest distance check set beforehand
-							int tempDistance;
+							int directionIdentifier = unitAction.getDirection();
 							
-							for (Unit enemyUnit : m_EnemyList)
+							// If it's packing resources
+							if (unit.getResources() > 0)
 							{
-								tempDistance = Math.abs(unit.getX() - enemyUnit.getX()) + Math.abs(unit.getY() - enemyUnit.getY());
+								// Check if moving back towards the base
+								if ((m_Base.getX() - unit.getX() < 0 && directionIdentifier == 3)
+										|| (m_Base.getX() - unit.getX() > 0 && directionIdentifier == 1)
+										|| (m_Base.getY() - unit.getY() < 0 && directionIdentifier == 0) 
+										|| (m_Base.getY() - unit.getY() < 0 && directionIdentifier == 2)) actionScore += m_MoveToHarvestWeight;
+							}
+							// else if it's looking for resources
+							else
+							{
+								int tempDistance;
 								
-								if (tempDistance < m_AttackDistance)
-								{
-									int directionIdentifier = potentialAction.getAction(unit).getDirection();
+								for (Unit resourceUnit : m_ResourceUnitList)
+			    				{
+									tempDistance = Math.abs(unit.getX() - resourceUnit.getX()) + Math.abs(unit.getY() - resourceUnit.getY());
 									
-									if ((enemyUnit.getX() - unit.getX() < 0 && directionIdentifier == 3/* UnitAction.DIRECTION_LEFT*/)
-											|| (enemyUnit.getX() - unit.getX() > 0 && directionIdentifier == 1/* UnitAction.DIRECTION_RIGHT*/)
-											|| (enemyUnit.getY() - unit.getY() < 0 && directionIdentifier == 0/* UnitAction.DIRECTION_UP*/)
-											|| (enemyUnit.getY() - unit.getY() > 0 && directionIdentifier == 2/* UnitAction.DIRECTION_DOWN*/)) actionScore += m_MoveToAttackWeight;
+									// Only add to score if a close worker is moving towards resource
+									if (tempDistance < 8)
+									{
+										// If it needs to go left etc
+										if ((resourceUnit.getX() - unit.getX() < 0 && directionIdentifier == 3/*UnitAction.DIRECTION_LEFT*/)
+											|| (resourceUnit.getX() - unit.getX() > 0 && directionIdentifier == 1/*UnitAction.DIRECTION_RIGHT*/)
+											|| (resourceUnit.getY() - unit.getY() < 0 && directionIdentifier == 0/*UnitAction.DIRECTION_UP*/)
+											|| (resourceUnit.getY() - unit.getY() > 0 && directionIdentifier == 2/*UnitAction.DIRECTION_DOWN*/)) actionScore += m_MoveToHarvestWeight;
+									}
 								}
 							}
 						}
 					}
 				}
-	    	}
-			return actionScore;
+			}
+			// Check for producing (one call not worth a m_ProduceWeight non zero check
+			if (unitAction.getType() == 4)
+			{
+				actionScore += m_ProduceWeight;
+			}
+			
+			// Check for direct attacking (should always have a non zero weighting)
+			if (unitAction.getType() == 5)// UnitAction.TYPE_ATTACK_LOCATION)
+			{
+				actionScore += m_AttackWeight;
+			}
+			else if (m_MoveToAttackWeight > 0 /*&& gameState.getTime() < cutOffTime*/)
+			{
+				// Check for en route attackers
+				// Check against closest distance check set beforehand
+				int tempDistance;
+				
+				
+				Unit enemyUnit = m_EnemyList.get(0);//for (Unit enemyUnit : m_EnemyList)
+				{
+					tempDistance = Math.abs(unit.getX() - enemyUnit.getX()) + Math.abs(unit.getY() - enemyUnit.getY());
+					
+					if (tempDistance < m_AttackDistance)
+					{
+						int directionIdentifier = unitAction.getDirection();
+						
+						if ((enemyUnit.getX() - unit.getX() < 0 && directionIdentifier == 3/* UnitAction.DIRECTION_LEFT*/)
+								|| (enemyUnit.getX() - unit.getX() > 0 && directionIdentifier == 1/* UnitAction.DIRECTION_RIGHT*/)
+								|| (enemyUnit.getY() - unit.getY() < 0 && directionIdentifier == 0/* UnitAction.DIRECTION_UP*/)
+								|| (enemyUnit.getY() - unit.getY() > 0 && directionIdentifier == 2/* UnitAction.DIRECTION_DOWN*/)) actionScore += m_MoveToAttackWeight;
+					}
+				}
+			}
 		}
 		return actionScore;
     }
+
     
+    // https://stackoverflow.com/questions/3869026/how-to-clean-up-threadlocals?utm_medium=organic&utm_source=google_rich_qa&utm_campaign=google_rich_qa
+    private void cleanThreadLocals() {
+        try {
+            // Get a reference to the thread locals table of the current thread
+            Thread thread = Thread.currentThread();
+            Field threadLocalsField = Thread.class.getDeclaredField("threadLocals");
+            threadLocalsField.setAccessible(true);
+            Object threadLocalTable = threadLocalsField.get(thread);
+
+            // Get a reference to the array holding the thread local variables inside the
+            // ThreadLocalMap of the current thread
+            Class<?> threadLocalMapClass = Class.forName("java.lang.ThreadLocal$ThreadLocalMap");
+            Field tableField = threadLocalMapClass.getDeclaredField("table");
+            tableField.setAccessible(true);
+            Object table = tableField.get(threadLocalTable);
+
+            // The key to the ThreadLocalMap is a WeakReference object. The referent field of this object
+            // is a reference to the actual ThreadLocal variable
+            Field referentField = Reference.class.getDeclaredField("referent");
+            referentField.setAccessible(true);
+
+            for (int i=0; i < Array.getLength(table); i++) {
+                // Each entry in the table array of ThreadLocalMap is an Entry object
+                // representing the thread local reference and its value
+                Object entry = Array.get(table, i);
+                if (entry != null) {
+                    // Get a reference to the thread local object and remove it from the table
+                    ThreadLocal<?> threadLocal = (ThreadLocal<?>)referentField.get(entry);
+                    threadLocal.remove();
+                }
+            }
+        } catch(Exception e) {
+            // We will tolerate an exception here and just log it
+            throw new IllegalStateException(e);
+        }
+    }
 }
+

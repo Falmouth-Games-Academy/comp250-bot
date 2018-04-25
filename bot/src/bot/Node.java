@@ -27,7 +27,7 @@ public class Node
     private GameState m_GameState;
     private int m_CurrentTreeDepth;
     
-    private PlayerActionGenerator m_ActionGenerator;
+    private MyPlayerActionGenerator m_ActionGenerator;
     private List<Node> m_ChildrenList = new ArrayList<>();
     private double m_Score = 0;
     private int m_VisitCount = 0;
@@ -80,7 +80,7 @@ public class Node
         	// the Analysis has decided it is based on heuristics set in the opening of the getAction() being called
 	        if (m_GameState.canExecuteAnyAction(maxPlayer))
 	        {
-	            m_ActionGenerator = new PlayerActionGenerator(gameState, maxPlayer);
+	            m_ActionGenerator = new MyPlayerActionGenerator(gameState, maxPlayer);
 	            m_ActionGenerator.randomizeOrder();
 	            m_OrderedActionList = analysis.AnalyseAndSortActionSpace(m_ActionGenerator, m_GameState, endTime);
 	            
@@ -90,9 +90,9 @@ public class Node
 	        }
 	        else if (m_GameState.canExecuteAnyAction(minPlayer))
 	        {
-	            m_ActionGenerator = new PlayerActionGenerator(gameState, minPlayer);
+	            m_ActionGenerator = new MyPlayerActionGenerator(gameState, minPlayer);
 	            m_ActionGenerator.randomizeOrder();
-	            m_OrderedActionList = analysis.AnalyseAndSortActionSpace(m_ActionGenerator, m_GameState, endTime);
+//	            m_OrderedActionList = analysis.AnalyseAndSortActionSpace(m_ActionGenerator, m_GameState, endTime);
 	            
 	            if (m_OrderedActionList.size() > m_MaxAmountOfNodeActionsToExamine) m_MaxActionIndex = m_MaxAmountOfNodeActionsToExamine;
 	            else m_MaxActionIndex = m_OrderedActionList.size();
