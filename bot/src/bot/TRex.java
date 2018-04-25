@@ -173,7 +173,7 @@ public class TRex extends AI//WithComputationBudget implements InterruptibleAI
             Node newNode = treeRootNode.selectNewAction(playerNumber, 1-playerNumber, endTime, MAX_TREE_DEPTH);
 
         	// Creating Nodes is expensive so check again!
-            if (System.currentTimeMillis() > endTime+20) break;
+            if (System.currentTimeMillis() > endTime) break;
             //else System.out.println("Success!");
             
             // If no new actions then null is returned
