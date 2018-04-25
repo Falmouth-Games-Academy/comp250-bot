@@ -42,7 +42,7 @@ public class TRex extends AI//WithComputationBudget implements InterruptibleAI
     GameState initialGameState;
     
     // The time allowance that is given to the main loop before breaking and finding the best found child
-    int MAXSIMULATIONTIME = 50;
+    int MAXSIMULATIONTIME = 40;
     
     // The look ahead depth allowance of nodes in the tree
     int MAX_TREE_DEPTH;
