@@ -143,6 +143,7 @@ public class MyPlayerActionGenerator {
             	if (/*count%3==0 && */System.currentTimeMillis() > cutOffTime)
             	{
             		//System.out.println("Puta");
+                    lastAction = null;
             		return null;
             	}
             	count++;
@@ -172,11 +173,11 @@ public class MyPlayerActionGenerator {
             }
             
             // check if we are over time (only check once every 1000 actions, since currenttimeMillis is a slow call):
-            if (cutOffTime>0 && /*(count2%3==0) &&*/ System.currentTimeMillis()>cutOffTime) {
-                lastAction = null;
-                return null;
-            }
-            count2++;
+//            if (cutOffTime>0 && /*(count2%3==0) &&*/ System.currentTimeMillis()>cutOffTime) {
+//                lastAction = null;
+//                return null;
+//            }
+//            count2++;
         }
         lastAction = null;
         return null;

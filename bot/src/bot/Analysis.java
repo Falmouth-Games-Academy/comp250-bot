@@ -149,7 +149,7 @@ public class Analysis
     	
     	while (true)// /*m_OverflowCheckIterator < 1 || */gameState.getTime() < cutOffTime)// true)
     	{
-    		if (m_OverflowCheckIterator%3 == 0) if (gameState.getTime() > cutOffTime) break;
+    		/*if (m_OverflowCheckIterator%3 == 0)*/ if (gameState.getTime() > cutOffTime) break;
     		
     		m_OverflowCheckIterator++;
     		
