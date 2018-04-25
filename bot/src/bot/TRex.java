@@ -42,7 +42,7 @@ public class TRex extends AI//WithComputationBudget implements InterruptibleAI
     GameState initialGameState;
     
     // The time allowance that is given to the main loop before breaking and finding the best found child
-    int MAXSIMULATIONTIME = 10;
+    int MAXSIMULATIONTIME;
     
     // The look ahead depth allowance of nodes in the tree
     int MAX_TREE_DEPTH;
@@ -118,7 +118,7 @@ public class TRex extends AI//WithComputationBudget implements InterruptibleAI
         // Simulate against the best heuristic quick time algorithm possible / available
 //        simulationEnemyAI = new Brontosaurus(unitTypeTable);
         
-        
+        MAXSIMULATIONTIME = 40;
         MAX_TREE_DEPTH = 10;
         SIMULATION_PLAYOUTS = 5;
         
@@ -183,7 +183,7 @@ public class TRex extends AI//WithComputationBudget implements InterruptibleAI
                 GameState gameStateClone = newNode.getGameState().clone();
                 
                 // Simulate a play out of that gameState
-                simulate(gameStateClone, gameStateClone.getTime() + MAXSIMULATIONTIME);
+                NSimulate(gameStateClone, gameStateClone.getTime() + MAXSIMULATIONTIME, SIMULATION_PLAYOUTS);
                 
                 // Not too sure here, the evaluation tends towards zero as the time increases
                 int time = gameStateClone.getTime() - initialGameState.getTime();
@@ -246,15 +246,22 @@ public class TRex extends AI//WithComputationBudget implements InterruptibleAI
     public float NSimulate(GameState gameStateClone, int player, int N) throws Exception
     {
         float accum = 0;
-        for(int i = 0; i < N; i++)
+        int iteration = 0;
+        if (System.currentTimeMillis() < endTime)
         {
-            GameState thisNGS = gameStateClone.clone();
-            simulate(thisNGS,thisNGS.getTime() + MAXSIMULATIONTIME);
-            int time = thisNGS.getTime() - gameStateClone.getTime();
-            // Discount factor:
-//            accum += (float)(ORIGINAL_EVALUATION_FUNCTION.evaluate(player, 1-player, thisNGS)*Math.pow(0.99,time/10.0));
-            accum += (float)(evaluationFunction.evaluate(player, 1-player, thisNGS)*Math.pow(0.99,time/10.0));
+	        for(int i = 0; i < N; i++)
+	        {
+	        	iteration++;
+	            GameState thisNGS = gameStateClone.clone();
+	            simulate(thisNGS,thisNGS.getTime() + MAXSIMULATIONTIME);
+	            int time = thisNGS.getTime() - gameStateClone.getTime();
+	            // Discount factor:
+	//            accum += (float)(ORIGINAL_EVALUATION_FUNCTION.evaluate(player, 1-player, thisNGS)*Math.pow(0.99,time/10.0));
+	            accum += (float)(evaluationFunction.evaluate(player, 1-player, thisNGS)*Math.pow(0.99,time/10.0));
+	        }
         }
+        else
+        	return accum/iteration;
             
         return accum/N;
     }    
