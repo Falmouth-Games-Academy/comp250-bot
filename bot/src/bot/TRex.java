@@ -118,7 +118,7 @@ public class TRex extends AI//WithComputationBudget implements InterruptibleAI
         // Simulate against the best heuristic quick time algorithm possible / available
 //        simulationEnemyAI = new Brontosaurus(unitTypeTable);
         
-        MAXSIMULATIONTIME = 40;
+        MAXSIMULATIONTIME = 50;
         MAX_TREE_DEPTH = 10;
         SIMULATION_PLAYOUTS = 5;
         
@@ -183,11 +183,11 @@ public class TRex extends AI//WithComputationBudget implements InterruptibleAI
                 GameState gameStateClone = newNode.getGameState().clone();
                 
                 // Simulate a play out of that gameState
-                NSimulate(gameStateClone, gameStateClone.getTime() + MAXSIMULATIONTIME, SIMULATION_PLAYOUTS);
+                double evaluation = NSimulate(gameStateClone, playerNumber/*gameStateClone.getTime() + MAXSIMULATIONTIME*/, SIMULATION_PLAYOUTS);
                 
                 // Not too sure here, the evaluation tends towards zero as the time increases
-                int time = gameStateClone.getTime() - initialGameState.getTime();
-                double evaluation = evaluationFunction.evaluate(playerNumber, 1-playerNumber, gameStateClone) * Math.pow(0.99,time/10.0);//evaluationFunction//
+       //         int time = gameStateClone.getTime() - initialGameState.getTime();
+       //         double evaluation = evaluationFunction.evaluate(playerNumber, 1-playerNumber, gameStateClone) * Math.pow(0.99,time/10.0);//evaluationFunction//
 
                 // Back propagation, cycle though each node's parents until the tree root is reached
                 while(newNode != null)
@@ -226,10 +226,10 @@ public class TRex extends AI//WithComputationBudget implements InterruptibleAI
         // Sanity check
         if (tempMostVisited == null)
         {
-//        	System.out.println("Noooooope");
+   //     	System.out.println("Noooooope");
         	return simulationEnemyAI.getAction(player, gameState);// new PlayerAction();
        	}
-        System.out.println(endTime - System.currentTimeMillis());
+    //    System.out.println(endTime - System.currentTimeMillis());
         // m_ActionMap getter
         return treeRootNode.getActionFromChildNode(tempMostVisited);
     }
@@ -247,9 +247,10 @@ public class TRex extends AI//WithComputationBudget implements InterruptibleAI
     {
         float accum = 0;
         int iteration = 0;
-        if (System.currentTimeMillis() < endTime)
+	       
+        for(int i = 0; i < N; i++)
         {
-	        for(int i = 0; i < N; i++)
+        	if (System.currentTimeMillis() < endTime)
 	        {
 	        	iteration++;
 	            GameState thisNGS = gameStateClone.clone();
@@ -257,11 +258,11 @@ public class TRex extends AI//WithComputationBudget implements InterruptibleAI
 	            int time = thisNGS.getTime() - gameStateClone.getTime();
 	            // Discount factor:
 	//            accum += (float)(ORIGINAL_EVALUATION_FUNCTION.evaluate(player, 1-player, thisNGS)*Math.pow(0.99,time/10.0));
-	            accum += (float)(evaluationFunction.evaluate(player, 1-player, thisNGS)*Math.pow(0.99,time/10.0));
+	            accum += evaluationFunction.evaluate(player, 1-player, thisNGS)*Math.pow(0.99,time/10.0);
 	        }
+        	else return accum/iteration;
         }
-        else
-        	return accum/iteration;
+       
             
         return accum/N;
     }    
