@@ -150,7 +150,7 @@ public class JarJarBinks extends AbstractionLayerAI {
                 workers.add(u);
             }
         }
-        workersBehavior(workers, p, pgs);
+        workersBehavior(workers, p, gs);
 
         // This method simply takes all the unit actions executed so far, and packages them into a PlayerAction
         return translateActions(player, gs);
@@ -160,6 +160,7 @@ public class JarJarBinks extends AbstractionLayerAI {
     public int enemyRating(int player, GameState gs) {
     	
     	int rating = 0;
+    	int workers = 0;
     	
     	 PhysicalGameState pgs = gs.getPhysicalGameState();
          Player p = gs.getPlayer(player);
@@ -171,6 +172,7 @@ public class JarJarBinks extends AbstractionLayerAI {
             	if (unit.getType() == workerType )
             	{
             		rating ++;
+            		workers++;
             		//System.out.println("enRat = " + enemyRating);
             	}
             	else if (unit.getType() == lightType)
@@ -187,7 +189,7 @@ public class JarJarBinks extends AbstractionLayerAI {
             	}
             }
         }
-    	
+    	maxWorkers = workers + 1;
     	return rating;
     }
     
@@ -237,9 +239,9 @@ public class JarJarBinks extends AbstractionLayerAI {
         }
         
         
-        
-        if (nworkers <= atkRating/3 && p.getResources() >= workerType.cost && nworkers < maxWorkers) { // nworkers <= unitCount/3 && 
+        if (p.getResources() >= workerType.cost && nworkers < maxWorkers) { // nworkers <= unitCount/3 &&  // nworkers <= atkRating/3 && 
             train(u, workerType);
+            System.out.println("workers = " + maxWorkers);
         }
     }
 
@@ -300,9 +302,12 @@ public class JarJarBinks extends AbstractionLayerAI {
         }
         else if (Base != null && enemyBase != null)// if (u.getY() < 7)
         {
+        	// Random number between -1 and 3
         	int Ran1 = ThreadLocalRandom.current().nextInt(-1,3);
+        	// if player base is on left side 
         	if (Base.getX() < enemyBase.getX())
 			{
+        		// if the 
         		if (Ran1 > 1)
         		{
         			move(u, ( Base.getX() + Ran1), Base.getY() + 
@@ -337,14 +342,33 @@ public class JarJarBinks extends AbstractionLayerAI {
         }*/
     }
 
-    public void workersBehavior(List<Unit> workers, Player p, PhysicalGameState pgs) {
-        int nbases = 0;
+    public void workersBehavior(List<Unit> workers, Player p, GameState gs) {
+    	PhysicalGameState pgs = gs.getPhysicalGameState();
+    	
+    	int nbases = 0;
         int nbarracks = 0;
+        int maxResourceWorkers = 1;
+        int resourceWorkers = 0;
 
         int resourcesUsed = 0;
         List<Unit> freeWorkers = new LinkedList<Unit>();
-        freeWorkers.addAll(workers);
-
+        List<Unit> defenceWorkers = new LinkedList<Unit>();
+        //freeWorkers.addAll(workers);
+        
+        for (Unit u : workers)
+        {
+        	if (resourceWorkers < 1)
+        	{
+        		freeWorkers.add(u);
+        		resourceWorkers++;
+        	}
+        	else
+        	{
+        		defenceWorkers.add(u);
+        	}
+        }
+        
+        
         if (workers.isEmpty()) {
             return;
         }
@@ -371,13 +395,18 @@ public class JarJarBinks extends AbstractionLayerAI {
             }
         }
 
-        if (nbarracks == 0) {
+        if (nbarracks == 0 && maxWorkers < workers.size()) {
             // build a barracks:
             if (p.getResources() >= barracksType.cost + resourcesUsed && !freeWorkers.isEmpty()) {
                 Unit u = freeWorkers.remove(0);
                 buildIfNotAlreadyBuilding(u,barracksType,u.getX(),u.getY(),reservedPositions,p,pgs);
             	resourcesUsed += barracksType.cost;
             }
+        }
+        
+        for (Unit unit : defenceWorkers) 
+        {
+        	workerUnitDefence(unit, p, gs);
         }
 
 
@@ -413,9 +442,41 @@ public class JarJarBinks extends AbstractionLayerAI {
                 } else {
                     harvest(u, closestResource, closestBase);
                 }
+                
             }
         }
     }
+    
+    public void workerUnitDefence(Unit u, Player p, GameState gs) {    	
+    	
+    	PhysicalGameState pgs = gs.getPhysicalGameState();
+        Unit closestEnemy = null;
+        int closestDistance = 0;
+        for (Unit u2 : pgs.getUnits()) {
+            if (u2.getPlayer() >= 0 && u2.getPlayer() != p.getID()) {
+                int d = Math.abs(u2.getX() - u.getX()) + Math.abs(u2.getY() - u.getY());
+                if (closestEnemy == null || d < closestDistance) {
+                    closestEnemy = u2;
+                    closestDistance = d;
+                }
+            }
+        }
+        
+        if (closestEnemy!=null) 
+        {
+            attack(u,closestEnemy);
+        }
+        
+        if (closestDistance <= 4) 
+        {
+	        if (closestEnemy!=null) 
+	        {
+	            attack(u,closestEnemy);
+	        }
+        }
+    }
+    
+    
 
 
     @Override
