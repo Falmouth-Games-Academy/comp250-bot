@@ -227,10 +227,10 @@ public class TRex extends AI//WithComputationBudget implements InterruptibleAI
         // Sanity check
         if (tempMostVisited == null)
         {
-        	System.out.println("Noooooope");
+ //       	System.out.println("Noooooope");
         	return simulationEnemyAI.getAction(player, gameState);// new PlayerAction();
        	}
-        System.out.println(endTime - System.currentTimeMillis());
+ //       System.out.println(endTime - System.currentTimeMillis());
         // m_ActionMap getter
         return treeRootNode.getActionFromChildNode(tempMostVisited);
     }
