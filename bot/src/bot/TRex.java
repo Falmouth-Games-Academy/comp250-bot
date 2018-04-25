@@ -118,7 +118,7 @@ public class TRex extends AI//WithComputationBudget implements InterruptibleAI
         // Simulate against the best heuristic quick time algorithm possible / available
 //        simulationEnemyAI = new Brontosaurus(unitTypeTable);
         
-        MAXSIMULATIONTIME = 65;
+        MAXSIMULATIONTIME = 55;
         MAX_TREE_DEPTH = 10;
         SIMULATION_PLAYOUTS = 5;
         
