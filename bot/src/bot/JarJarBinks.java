@@ -45,7 +45,7 @@ public class JarJarBinks extends AbstractionLayerAI {
     int basePosX;
     int basePosY;
     
-    int maxWorkers = 0;
+    int enemyWorkers = 0;
     
     int mapSize = 0;
     
@@ -103,8 +103,8 @@ public class JarJarBinks extends AbstractionLayerAI {
         
         mapSize = pgs.getWidth() * pgs.getHeight();
         
-        if (mapSize == 144) { maxWorkers = 2; }
-        else { maxWorkers = 2; }
+        if (mapSize == 144) { enemyWorkers = 2; }
+        else { enemyWorkers = 2; }
         
         //System.out.println("enemy " + enemyRating(player, gs));
         //System.out.println("me " + playerRating(player, gs));
@@ -189,7 +189,11 @@ public class JarJarBinks extends AbstractionLayerAI {
             	}
             }
         }
-    	maxWorkers = workers + 1;
+        if (mapSize != 72)
+        {
+        	enemyWorkers = workers + 1;
+        }
+    	
     	return rating;
     }
     
@@ -239,9 +243,9 @@ public class JarJarBinks extends AbstractionLayerAI {
         }
         
         
-        if (p.getResources() >= workerType.cost && nworkers < maxWorkers) { // nworkers <= unitCount/3 &&  // nworkers <= atkRating/3 && 
+        if (p.getResources() >= workerType.cost && nworkers < enemyWorkers) { // nworkers <= unitCount/3 &&  // nworkers <= atkRating/3 && 
             train(u, workerType);
-            System.out.println("workers = " + maxWorkers);
+            // System.out.println("workers = " + enemyWorkers);
         }
     }
 
@@ -303,32 +307,32 @@ public class JarJarBinks extends AbstractionLayerAI {
         else if (Base != null && enemyBase != null)// if (u.getY() < 7)
         {
         	// Random number between -1 and 3
-        	int Ran1 = ThreadLocalRandom.current().nextInt(-1,3);
+        	int RanX = ThreadLocalRandom.current().nextInt(-1,3);
         	// if player base is on left side 
         	if (Base.getX() < enemyBase.getX())
 			{
         		// if the 
-        		if (Ran1 > 1)
+        		if (RanX > 1)
         		{
-        			move(u, ( Base.getX() + Ran1), Base.getY() + 
+        			move(u, ( Base.getX() + RanX), Base.getY() + 
     						ThreadLocalRandom.current().nextInt(-1,1));
         		}
         		else
         		{
-        			move(u, ( Base.getX() + Ran1), Base.getY() + 
+        			move(u, ( Base.getX() + RanX), Base.getY() + 
     						ThreadLocalRandom.current().nextInt(2,3));
         		}
 			}
 			else
 			{
-				if (Ran1 > 1)
+				if (RanX > 1)
         		{
-        			move(u, ( Base.getX() - Ran1), Base.getY() - 
+        			move(u, ( Base.getX() - RanX), Base.getY() - 
     						ThreadLocalRandom.current().nextInt(-1,1));
         		}
         		else
         		{
-        			move(u, ( Base.getX() - Ran1), Base.getY() - 
+        			move(u, ( Base.getX() - RanX), Base.getY() - 
     						ThreadLocalRandom.current().nextInt(2,3));
         		}
 			}
@@ -347,9 +351,14 @@ public class JarJarBinks extends AbstractionLayerAI {
     	
     	int nbases = 0;
         int nbarracks = 0;
-        int maxResourceWorkers = 1;
+        int maxResourceWorkers = 2;
         int resourceWorkers = 0;
 
+        if (mapSize == 72)
+        {
+        	maxResourceWorkers = 5;
+        }
+        
         int resourcesUsed = 0;
         List<Unit> freeWorkers = new LinkedList<Unit>();
         List<Unit> defenceWorkers = new LinkedList<Unit>();
@@ -357,10 +366,11 @@ public class JarJarBinks extends AbstractionLayerAI {
         
         for (Unit u : workers)
         {
-        	if (resourceWorkers < 1)
+        	if (resourceWorkers < maxResourceWorkers)
         	{
         		freeWorkers.add(u);
         		resourceWorkers++;
+        		//System.out.println("workers = " + resourceWorkers);
         	}
         	else
         	{
@@ -395,7 +405,7 @@ public class JarJarBinks extends AbstractionLayerAI {
             }
         }
 
-        if (nbarracks == 0 && maxWorkers < workers.size()) {
+        if (nbarracks == 0 && enemyWorkers < defenceWorkers.size() + 3) {
             // build a barracks:
             if (p.getResources() >= barracksType.cost + resourcesUsed && !freeWorkers.isEmpty()) {
                 Unit u = freeWorkers.remove(0);
@@ -449,6 +459,9 @@ public class JarJarBinks extends AbstractionLayerAI {
     
     public void workerUnitDefence(Unit u, Player p, GameState gs) {    	
     	
+    	Unit enemyBase = null;
+    	Unit Base = null;
+    	
     	PhysicalGameState pgs = gs.getPhysicalGameState();
         Unit closestEnemy = null;
         int closestDistance = 0;
@@ -462,17 +475,62 @@ public class JarJarBinks extends AbstractionLayerAI {
             }
         }
         
-        if (closestEnemy!=null) 
+        for(Unit eBase:pgs.getUnits()) {
+            if (eBase.getPlayer()>=0 && eBase.getPlayer()!=p.getID() && eBase.getType() == baseType) {
+            	enemyBase = eBase;
+            }
+            }
+        for (Unit baseUnit:pgs.getUnits()) {
+        	if (baseUnit.getType()==baseType && 
+        		baseUnit.getPlayer() == p.getID()) {
+        		Base = baseUnit;
+        	}
+        	}
+        
+        /*if (closestEnemy!=null) 
         {
             attack(u,closestEnemy);
-        }
+        }*/
         
-        if (closestDistance <= 4) 
+        if (closestDistance <= 7) 
         {
 	        if (closestEnemy!=null) 
 	        {
 	            attack(u,closestEnemy);
 	        }
+        }
+        else if (Base != null && enemyBase != null)// if (u.getY() < 7)
+        {
+        	// Random number between -1 and 3
+        	int RanX = ThreadLocalRandom.current().nextInt(-2,5);
+        	// if player base is on left side 
+        	if (Base.getX() < enemyBase.getX())
+			{
+        		// if the 
+        		if (RanX > 1)
+        		{
+        			move(u, ( Base.getX() + RanX), Base.getY() + 
+    						ThreadLocalRandom.current().nextInt(-1,3));
+        		}
+        		else
+        		{
+        			move(u, ( Base.getX() + RanX), Base.getY() + 
+    						ThreadLocalRandom.current().nextInt(3,5));
+        		}
+			}
+			else
+			{
+				if (RanX > 1)
+        		{
+        			move(u, ( Base.getX() - RanX), Base.getY() - 
+    						ThreadLocalRandom.current().nextInt(-1,3));
+        		}
+        		else
+        		{
+        			move(u, ( Base.getX() - RanX), Base.getY() - 
+    						ThreadLocalRandom.current().nextInt(3,5));
+        		}
+			}
         }
     }
     
