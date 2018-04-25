@@ -128,6 +128,7 @@ public class TRex extends AI//WithComputationBudget implements InterruptibleAI
         physicalGameState = gameState.getPhysicalGameState();
         halfMapDistance = (physicalGameState.getWidth() + physicalGameState.getHeight()) / 2 + 1;
         
+        // The initial analysis can be expensive
         analysis = new Analysis(playerNumber, gameState, halfMapDistance, baseType, workerType);
         analysis.analyseGameState();
         
@@ -155,7 +156,7 @@ public class TRex extends AI//WithComputationBudget implements InterruptibleAI
         else if (gameState.getTime() > 4000)	tree.setAnalysisWeightings(0.0f,	0.0f,	100.0f,	10.0f,	0.0f,	halfMapDistance*2);
 */       
         
-        endTime = System.currentTimeMillis() + MAXSIMULATIONTIME;
+//        endTime = System.currentTimeMillis() + MAXSIMULATIONTIME;
         
         // Initialise the tree as a new Node with parent = null
         treeRootNode = new Node(playerNumber, 1-playerNumber, null, gameState.clone(), analysis, endTime);
@@ -171,6 +172,10 @@ public class TRex extends AI//WithComputationBudget implements InterruptibleAI
             
         	// Tries to get a new unexplored action from the tree
             Node newNode = treeRootNode.selectNewAction(playerNumber, 1-playerNumber, endTime, MAX_TREE_DEPTH);
+
+        	// Creating Nodes is expensive so check again!
+            if (System.currentTimeMillis() > endTime) break;
+            //else System.out.println("Success!");
             
             // If no new actions then null is returned
             if (newNode != null)

@@ -139,7 +139,11 @@ public class MyPlayerActionGenerator {
             while(i>0) {
             	
             	// Stop timing out!!!
-            	if (System.currentTimeMillis() > cutOffTime) return null;
+            	if (System.currentTimeMillis() > cutOffTime)
+            	{
+            		//System.out.println("Puta");
+            		return null;
+            	}
             	
                 i--;
                 Pair<Unit,List<UnitAction>> unitChoices = choices.get(i);
