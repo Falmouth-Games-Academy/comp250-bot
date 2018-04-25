@@ -140,7 +140,7 @@ public class MyPlayerActionGenerator {
             while(i>0) {
             	
             	// Stop timing out!!!
-            	if (count%3==0 && System.currentTimeMillis() > cutOffTime)
+            	if (/*count%3==0 && */System.currentTimeMillis() > cutOffTime)
             	{
             		//System.out.println("Puta");
             		return null;
