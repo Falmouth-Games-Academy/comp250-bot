@@ -182,13 +182,14 @@ public class TRex extends AI//WithComputationBudget implements InterruptibleAI
             	// Clone the gameState for use in the simulation
                 GameState gameStateClone = newNode.getGameState().clone();
                 
-                // Simulate a play out of that gameState
-                double evaluation = NSimulate(gameStateClone, playerNumber/*gameStateClone.getTime() + MAXSIMULATIONTIME*/, SIMULATION_PLAYOUTS);
-                
                 // Not too sure here, the evaluation tends towards zero as the time increases
-       //         int time = gameStateClone.getTime() - initialGameState.getTime();
-       //         double evaluation = evaluationFunction.evaluate(playerNumber, 1-playerNumber, gameStateClone) * Math.pow(0.99,time/10.0);//evaluationFunction//
-
+                int time = gameStateClone.getTime() - initialGameState.getTime();
+                
+                // Simulate a play out of that gameState
+                simulate(gameStateClone, player);
+                double evaluation = evaluationFunction.evaluate(playerNumber, 1-playerNumber, gameStateClone) * Math.pow(0.99,time/10.0);//evaluationFunction//
+    //            double evaluation = NSimulate(gameStateClone, playerNumber/*gameStateClone.getTime() + MAXSIMULATIONTIME*/, time, SIMULATION_PLAYOUTS);
+                
                 // Back propagation, cycle though each node's parents until the tree root is reached
                 while(newNode != null)
                 {
@@ -226,10 +227,10 @@ public class TRex extends AI//WithComputationBudget implements InterruptibleAI
         // Sanity check
         if (tempMostVisited == null)
         {
-   //     	System.out.println("Noooooope");
+        	System.out.println("Noooooope");
         	return simulationEnemyAI.getAction(player, gameState);// new PlayerAction();
        	}
-    //    System.out.println(endTime - System.currentTimeMillis());
+        System.out.println(endTime - System.currentTimeMillis());
         // m_ActionMap getter
         return treeRootNode.getActionFromChildNode(tempMostVisited);
     }
@@ -243,7 +244,7 @@ public class TRex extends AI//WithComputationBudget implements InterruptibleAI
  *     
 */
     // gets the best action, evaluates it for 'N' times using a simulation, and returns the average obtained value:
-    public float NSimulate(GameState gameStateClone, int player, int N) throws Exception
+    public float NSimulate(GameState gameStateClone, int player, long time, int N) throws Exception
     {
         float accum = 0;
         int iteration = 0;
@@ -255,7 +256,7 @@ public class TRex extends AI//WithComputationBudget implements InterruptibleAI
 	        	iteration++;
 	            GameState thisNGS = gameStateClone.clone();
 	            simulate(thisNGS,thisNGS.getTime() + MAXSIMULATIONTIME);
-	            int time = thisNGS.getTime() - gameStateClone.getTime();
+	//            int time = thisNGS.getTime() - gameStateClone.getTime();
 	            // Discount factor:
 	//            accum += (float)(ORIGINAL_EVALUATION_FUNCTION.evaluate(player, 1-player, thisNGS)*Math.pow(0.99,time/10.0));
 	            accum += evaluationFunction.evaluate(player, 1-player, thisNGS)*Math.pow(0.99,time/10.0);
