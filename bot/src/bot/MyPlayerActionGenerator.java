@@ -140,7 +140,7 @@ public class MyPlayerActionGenerator {
             while(i>0) {
             	
             	// Stop timing out!!!
-            	if (count%10==0 && System.currentTimeMillis() > cutOffTime)
+            	if (count%3==0 && System.currentTimeMillis() > cutOffTime)
             	{
             		//System.out.println("Puta");
             		return null;
@@ -172,7 +172,7 @@ public class MyPlayerActionGenerator {
             }
             
             // check if we are over time (only check once every 1000 actions, since currenttimeMillis is a slow call):
-            if (cutOffTime>0 && (count2%10==0) && System.currentTimeMillis()>cutOffTime) {
+            if (cutOffTime>0 && (count2%3==0) && System.currentTimeMillis()>cutOffTime) {
                 lastAction = null;
                 return null;
             }
