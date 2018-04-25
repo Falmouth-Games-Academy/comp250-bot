@@ -161,7 +161,7 @@ public class Node
     public double UCBScore(Node child)
     {
     	// Tweak the constant. Dynamic? How...
-    	C = 0.0f;
+    	//C = 0.0f;
     	
     	return child.getScore()/child.getVisitCount() + C * Math.sqrt(2 * Math.log((double)child.getParent().getVisitCount())/child.getVisitCount());
     }
