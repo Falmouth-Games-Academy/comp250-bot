@@ -255,7 +255,7 @@ public class BaseBot extends AbstractionLayerAI {
     	}
     }
     
-    // __START OF UNIT CONTROLLERS__
+// __START OF UNIT CONTROLLERS__
     
     // Control base unit production
     public boolean BaseController(List<Unit> bases,  Map <UnitType, Integer> gameInfo)
@@ -375,55 +375,7 @@ public class BaseBot extends AbstractionLayerAI {
 		
 	}
     
-    // Control light units
-    public void PrioritiseWorkers(List<Unit> unitGroup, Map <String, List<Unit>> enemyUnits)
-    {
-    	// Return if no light units in list
-    	if(unitGroup.isEmpty())
-    	{
-    		return;
-    	}
-    	
-    	// What to attack
-    	//Unit target = null;
-    	
-    	
-    	// Go through all light units
-    	for(Unit unit : unitGroup)
-		{
-    		// Priority of which units to attack
-    		if(enemyUnits.get("workers").size() != 0)
-    		{
-    			attack(unit, enemyUnits.get("workers").get(0));
-    			//for(Unit enemy : enemyUnits.get("workers"))
-    			//{
-    			//	int distanceToWorker = Math.abs(enemy.getX() - unit.getX()) + Math.abs(enemy.getY() - unit.getY());
-    			//}
-    		}
-    		else if(enemyUnits.get("light").size() != 0)
-    		{
-    			attack(unit, enemyUnits.get("light").get(0));
-    		}
-    		else if(enemyUnits.get("heavy").size() != 0)
-    		{
-    			attack(unit, enemyUnits.get("heavy").get(0));
-    		}
-    		else if(enemyUnits.get("ranged").size() != 0)
-    		{
-    			attack(unit, enemyUnits.get("ranged").get(0));
-    		}
-    		else if(enemyUnits.get("bases").size() != 0)
-    		{
-    			attack(unit, enemyUnits.get("bases").get(0));
-    		}
-    		else if(enemyUnits.get("barracks").size() != 0)
-    		{
-    			attack(unit, enemyUnits.get("barracks").get(0));
-    		}
-		}
-    }
-    
- // Attack workers first
+    // Attack workers first
     public void PrioritiseWorkers(List<Unit> unitGroup, Map <String, List<Unit>> enemyUnits)
     {
     	// Return if no light units in list
