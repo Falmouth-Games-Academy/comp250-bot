@@ -210,18 +210,18 @@ public class ScotlandNumberOne extends AbstractionLayerAI {
         }
         else if (Base != null && enemyBase != null)
         {
-        	int Ran1 = ThreadLocalRandom.current().nextInt(-1,3);
+        	int Ran1 = ThreadLocalRandom.current().nextInt(-2,5);
         	if (Base.getX() < enemyBase.getX())
 			{
         		if (Ran1 > 1)
         		{
         			move(u, ( Base.getX() + Ran1), Base.getY() + 
-    						ThreadLocalRandom.current().nextInt(-2,5));
+    						ThreadLocalRandom.current().nextInt(-1,3));
         		}
         		else
         		{
         			move(u, ( Base.getX() + Ran1), Base.getY() + 
-    						ThreadLocalRandom.current().nextInt(2,3));
+    						ThreadLocalRandom.current().nextInt(2,4));
         		}
 			}
 			else
@@ -291,12 +291,21 @@ public class ScotlandNumberOne extends AbstractionLayerAI {
             if (p.getResources() >= barracksType.cost + resourcesUsed && !freeWorkers.isEmpty()) 
             {
                 Unit u = freeWorkers.remove(0);
-                buildIfNotAlreadyBuilding(u,barracksType,u.getX()+1,u.getY()+1,reservedPositions,p,pgs);
-            	resourcesUsed += barracksType.cost;
+                if (u.getPlayer() == 0)
+                {
+                    buildIfNotAlreadyBuilding(u,barracksType,u.getX()+1,u.getY()+1,reservedPositions,p,pgs);
+                	resourcesUsed += barracksType.cost;
+                }
+                else
+                {
+                    buildIfNotAlreadyBuilding(u,barracksType,u.getX(),u.getY(),reservedPositions,p,pgs);
+                	resourcesUsed += barracksType.cost;
+                }
+                	
             }
         }
 
-
+        
         // harvest with all the free workers:
         for (Unit u : freeWorkers)
         {
