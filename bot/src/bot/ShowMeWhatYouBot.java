@@ -260,12 +260,9 @@ public class ShowMeWhatYouBot extends AbstractionLayerAI {
 		if(workers.isEmpty()) {return;}
 		
 		// harvesters is half the number of total resources
-		double numberOfHarvesters = Math.ceil(gameInfo.get(resources));
+		//double numberOfHarvesters = Math.ceil(gameInfo.get(resources));
 
-		List<Unit> harvesters = new LinkedList<Unit>();
-		
-		for ()
-		harvesters.add(workers);
+		//List<Unit> harvesters = new LinkedList<Unit>();
 		
 		// Tell each worker what to do
 		for (Unit worker : workers)
