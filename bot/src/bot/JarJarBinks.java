@@ -7,7 +7,10 @@ package bot;
 import ai.abstraction.AbstractAction;
 import ai.abstraction.AbstractionLayerAI;
 import ai.abstraction.Harvest;
+import ai.abstraction.pathfinding.GreedyPathFinding;
 import ai.abstraction.pathfinding.AStarPathFinding;
+import ai.abstraction.pathfinding.FloodFillPathFinding; 
+import ai.abstraction.pathfinding.BFSPathFinding;
 import ai.core.AI;
 import ai.abstraction.pathfinding.PathFinding;
 import ai.core.ParameterSpecification;
@@ -62,9 +65,15 @@ public class JarJarBinks extends AbstractionLayerAI {
     // If we have a worker: do this if needed: build base, build barracks, harvest resources
 
     public JarJarBinks(UnitTypeTable a_utt) {
-        this(a_utt, new AStarPathFinding());
+        this(a_utt, new GreedyPathFinding());
     }
     
+  //new AStarPathFinding());
+  // new GreedyPathFinding());
+ // new FloodFillPathFinding());
+    // new BFSPathFinding());
+
+
     
     public JarJarBinks(UnitTypeTable a_utt, PathFinding a_pf) {
         super(a_pf);
@@ -108,7 +117,7 @@ public class JarJarBinks extends AbstractionLayerAI {
         
         mapSize = pgs.getWidth() * pgs.getHeight();
         
-        if (mapSize == 144) { enemyWorkers = 2; }
+        if (mapSize == 144) { enemyWorkers = 1; }
         else { enemyWorkers = 2; }
         
         //System.out.println("enemy " + enemyRating(player, gs));
@@ -196,7 +205,19 @@ public class JarJarBinks extends AbstractionLayerAI {
         }
         if (mapSize != 72)
         {
-        	enemyWorkers = workers + 1;
+        	if(mapSize == 576)
+        	{
+        		enemyWorkers = 3;
+        	}
+        	else if (mapSize == 144)
+        	{
+        		enemyWorkers = 3;
+        	}
+        	else
+        	{
+        		enemyWorkers = workers + 1; // +1;
+        	}
+        	
         }
     	
     	return rating;
@@ -355,7 +376,7 @@ public class JarJarBinks extends AbstractionLayerAI {
         int resourceWorkers = 0;
 
         if (mapSize == 72){ maxResourceWorkers = 2;}
-        else if (mapSize != 72 && mapSize <= 100)
+        else if (mapSize != 72 && mapSize <= 144)
         {
         	maxResourceWorkers = 1;
         }
@@ -428,16 +449,16 @@ public class JarJarBinks extends AbstractionLayerAI {
             // build a barracks:
             if (p.getResources() >= barracksType.cost + resourcesUsed && !freeWorkers.isEmpty()) {
                 Unit u = freeWorkers.remove(0);
-                if (mapSize > 144)
+                if (mapSize != 72)
                 {
                 	if (u.getPlayer() == 0)
                 	{
-                		buildIfNotAlreadyBuilding(u,barracksType,Base.getX()+1,Base.getY()+2,reservedPositions,p,pgs);
+                		buildIfNotAlreadyBuilding(u,barracksType,Base.getX()+2,Base.getY()+1,reservedPositions,p,pgs);
                     	resourcesUsed += barracksType.cost;
                 	}
                 	else
                 	{
-                		buildIfNotAlreadyBuilding(u,barracksType,Base.getX(),Base.getY()-1,reservedPositions,p,pgs);
+                		buildIfNotAlreadyBuilding(u,barracksType,Base.getX()-1,Base.getY(),reservedPositions,p,pgs);
                     	resourcesUsed += barracksType.cost;
                 	}
                 	
@@ -520,7 +541,7 @@ public class JarJarBinks extends AbstractionLayerAI {
         
         System.out.println(enemyWorkers);
         
-        if (closestDistance <= 7 || enemyWorkers < 4) 
+        if (closestDistance <= 6 || (enemyWorkers < 4 && mapSize <= 144) || p.getResources() == 0) 
         {
 	        if (closestEnemy!=null) 
 	        {
