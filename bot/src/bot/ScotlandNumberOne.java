@@ -37,6 +37,7 @@ public class ScotlandNumberOne extends AbstractionLayerAI {
     int rangedCount;
     int unitCount;
     
+    int mapSize = 0;
 
 
     public ScotlandNumberOne(UnitTypeTable a_utt) 
@@ -76,6 +77,9 @@ public class ScotlandNumberOne extends AbstractionLayerAI {
     {
         PhysicalGameState pgs = gs.getPhysicalGameState();
         Player p = gs.getPlayer(player);   
+        
+        //Gets size of the map
+        mapSize = pgs.getWidth() * pgs.getHeight();
         
         // behavior of bases:
         for (Unit u : pgs.getUnits()) 
@@ -120,7 +124,7 @@ public class ScotlandNumberOne extends AbstractionLayerAI {
                 workers.add(u);
             }
         }
-        workersBehavior(workers, p, pgs);
+        workersBehavior(workers, p, gs);
 
         // This method simply takes all the unit actions executed so far, and packages them into a PlayerAction
         return translateActions(player, gs);
@@ -138,7 +142,7 @@ public class ScotlandNumberOne extends AbstractionLayerAI {
                 nworkers++;
             }
         }
-        if (p.getResources() >= workerType.cost && nworkers < 2) 
+        if (p.getResources() >= workerType.cost && nworkers < 3) 
         {
             train(u, workerType);
         }
@@ -249,15 +253,36 @@ public class ScotlandNumberOne extends AbstractionLayerAI {
         	
     }
 
-    public void workersBehavior(List<Unit> workers, Player p, PhysicalGameState pgs) 
-    {
+    public void workersBehavior(List<Unit> workers, Player p, GameState gs) {
+    	PhysicalGameState pgs = gs.getPhysicalGameState();
         int nbases = 0;
         int nbarracks = 0;
+        int harvestingWorkers = 0;
+        int maxHarvestingWorkers = 3;
 
         int resourcesUsed = 0;
         List<Unit> freeWorkers = new LinkedList<Unit>();
-        freeWorkers.addAll(workers);
+        List<Unit> attackingWorkers = new LinkedList<Unit>();
+        //freeWorkers.addAll(workers);
+        
+        if (mapSize <=64)
+        {
+        	maxHarvestingWorkers = 1;
+        }
 
+        for (Unit u : workers)
+        {
+        	if (harvestingWorkers < maxHarvestingWorkers)
+        	{
+        		freeWorkers.add(u);
+        		harvestingWorkers++;
+        	}
+        	else
+        	{
+        		attackingWorkers.add(u);
+        	}
+        }
+        
         if (workers.isEmpty()) 
         {
             return;
@@ -310,6 +335,11 @@ public class ScotlandNumberOne extends AbstractionLayerAI {
                 	
             }
         }
+        
+        for (Unit unit : attackingWorkers) 
+        {
+        	workerUnitDefence(unit, p, gs);
+        }
 
         
         // harvest with all the free workers:
@@ -360,6 +390,45 @@ public class ScotlandNumberOne extends AbstractionLayerAI {
     }
 
 
+    public void workerUnitDefence(Unit u, Player p, GameState gs) {    	
+    	
+    	Unit enemyBase = null;
+    	Unit Base = null;
+    	
+    	PhysicalGameState pgs = gs.getPhysicalGameState();
+        Unit closestEnemy = null;
+        int closestDistance = 0;
+        for (Unit u2 : pgs.getUnits()) {
+            if (u2.getPlayer() >= 0 && u2.getPlayer() != p.getID()) {
+                int d = Math.abs(u2.getX() - u.getX()) + Math.abs(u2.getY() - u.getY());
+                if (closestEnemy == null || d < closestDistance) {
+                    closestEnemy = u2;
+                    closestDistance = d;
+                }
+            }
+        }
+        
+        for(Unit eBase:pgs.getUnits()) {
+            if (eBase.getPlayer()>=0 && eBase.getPlayer()!=p.getID() && eBase.getType() == baseType) {
+            	enemyBase = eBase;
+            }
+            }
+        for (Unit baseUnit:pgs.getUnits()) {
+        	if (baseUnit.getType()==baseType && 
+        		baseUnit.getPlayer() == p.getID()) {
+        		Base = baseUnit;
+        	}
+        	}
+        
+        
+        if (closestDistance <= 7) 
+        {
+        	attack(u,closestEnemy); 
+
+        }
+
+    }
+    
     @Override
     public List<ParameterSpecification> getParameters()
     {
