@@ -42,8 +42,11 @@ public class JarJarBinks extends AbstractionLayerAI {
     int heavyCount;
     int unitCount;
     
-    int basePosX;
-    int basePosY;
+    
+    Unit enemyBase = null;
+	Unit Base = null;
+   // int basePosX;
+   // int basePosY;
     
     int enemyWorkers = 0;
     
@@ -100,6 +103,8 @@ public class JarJarBinks extends AbstractionLayerAI {
         PhysicalGameState pgs = gs.getPhysicalGameState();
         Player p = gs.getPlayer(player);
 //        System.out.println("HeavyRushAI for player " + player + " (cycle " + gs.getTime() + ")");   
+        
+         CheckBasePositions(p, gs);
         
         mapSize = pgs.getWidth() * pgs.getHeight();
         
@@ -272,8 +277,8 @@ public class JarJarBinks extends AbstractionLayerAI {
 
     public void meleeUnitBehavior(Unit u, Player p, GameState gs) {
         
-    	Unit enemyBase = null;
-    	Unit Base = null;
+    	//Unit enemyBase = null;
+    	//Unit Base = null;
     	
     	
     	PhysicalGameState pgs = gs.getPhysicalGameState();
@@ -293,11 +298,13 @@ public class JarJarBinks extends AbstractionLayerAI {
 	            if (eBase.getPlayer()>=0 && eBase.getPlayer()!=p.getID() && eBase.getType() == baseType) {
 	            	enemyBase = eBase;
 	            }
+        }
 	    for (Unit baseUnit:pgs.getUnits()) {
 	        	if (baseUnit.getType()==baseType && 
 	        		baseUnit.getPlayer() == p.getID()) {
 	        		Base = baseUnit;
 	        	}
+	    }
 
         
         if (closestDistance < 4 || atkRating > (enemyAtkRating + 5) || p.getResources() == 0) { // closestEnemy != null
@@ -307,44 +314,37 @@ public class JarJarBinks extends AbstractionLayerAI {
         else if (Base != null && enemyBase != null)// if (u.getY() < 7)
         {
         	// Random number between -1 and 3
-        	int RanX = ThreadLocalRandom.current().nextInt(-1,3);
+        	int RanX = ThreadLocalRandom.current().nextInt(-1,4);
         	// if player base is on left side 
         	if (Base.getX() < enemyBase.getX())
 			{
         		// if the 
-        		if (RanX > 1)
+        		if (RanX > 2)
         		{
         			move(u, ( Base.getX() + RanX), Base.getY() + 
-    						ThreadLocalRandom.current().nextInt(-1,1));
+    						ThreadLocalRandom.current().nextInt(-2,2));
         		}
         		else
         		{
         			move(u, ( Base.getX() + RanX), Base.getY() + 
-    						ThreadLocalRandom.current().nextInt(2,3));
+    						ThreadLocalRandom.current().nextInt(3,4));
         		}
 			}
 			else
 			{
-				if (RanX > 1)
+				if (RanX > 2)
         		{
         			move(u, ( Base.getX() - RanX), Base.getY() - 
-    						ThreadLocalRandom.current().nextInt(-1,1));
+    						ThreadLocalRandom.current().nextInt(-2,2));
         		}
         		else
         		{
         			move(u, ( Base.getX() - RanX), Base.getY() - 
-    						ThreadLocalRandom.current().nextInt(2,3));
+    						ThreadLocalRandom.current().nextInt(3,4));
         		}
 			}
-        	}
-	    }
         }
-        	
-        /* else
-        {
-        	move(u, ( 13 - ThreadLocalRandom.current().nextInt(-1,3)), 11);
-        }*/
-    }
+	}
 
     public void workersBehavior(List<Unit> workers, Player p, GameState gs) {
     	PhysicalGameState pgs = gs.getPhysicalGameState();
@@ -354,9 +354,10 @@ public class JarJarBinks extends AbstractionLayerAI {
         int maxResourceWorkers = 2;
         int resourceWorkers = 0;
 
-        if (mapSize == 72)
+        if (mapSize == 72){ maxResourceWorkers = 2;}
+        else if (mapSize != 72 && mapSize <= 100)
         {
-        	maxResourceWorkers = 5;
+        	maxResourceWorkers = 1;
         }
         
         int resourcesUsed = 0;
@@ -374,6 +375,16 @@ public class JarJarBinks extends AbstractionLayerAI {
         	}
         	else
         	{
+        		defenceWorkers.add(u);
+        		System.out.println("def workers "+defenceWorkers.size());
+        	}
+        }
+        
+        if (p.getResources() == 0)
+        {
+        	for (Unit u : freeWorkers)
+        	{
+        		freeWorkers.remove(u);
         		defenceWorkers.add(u);
         	}
         }
@@ -405,12 +416,37 @@ public class JarJarBinks extends AbstractionLayerAI {
             }
         }
 
+        
+        for (Unit baseUnit:pgs.getUnits()) {
+        	if (baseUnit.getType()==baseType && 
+        		baseUnit.getPlayer() == p.getID()) {
+        		Base = baseUnit;
+        	}
+        	}
+        
         if (nbarracks == 0 && enemyWorkers < defenceWorkers.size() + 3) {
             // build a barracks:
             if (p.getResources() >= barracksType.cost + resourcesUsed && !freeWorkers.isEmpty()) {
                 Unit u = freeWorkers.remove(0);
-                buildIfNotAlreadyBuilding(u,barracksType,u.getX(),u.getY(),reservedPositions,p,pgs);
-            	resourcesUsed += barracksType.cost;
+                if (mapSize > 144)
+                {
+                	if (u.getPlayer() == 0)
+                	{
+                		buildIfNotAlreadyBuilding(u,barracksType,Base.getX()+1,Base.getY()+2,reservedPositions,p,pgs);
+                    	resourcesUsed += barracksType.cost;
+                	}
+                	else
+                	{
+                		buildIfNotAlreadyBuilding(u,barracksType,Base.getX(),Base.getY()-1,reservedPositions,p,pgs);
+                    	resourcesUsed += barracksType.cost;
+                	}
+                	
+                }
+                else 
+                {
+                	buildIfNotAlreadyBuilding(u,barracksType,u.getX(),u.getY(),reservedPositions,p,pgs);
+                	resourcesUsed += barracksType.cost;
+                }
             }
         }
         
@@ -459,8 +495,8 @@ public class JarJarBinks extends AbstractionLayerAI {
     
     public void workerUnitDefence(Unit u, Player p, GameState gs) {    	
     	
-    	Unit enemyBase = null;
-    	Unit Base = null;
+    	//Unit enemyBase = null;
+    	//Unit Base = null;
     	
     	PhysicalGameState pgs = gs.getPhysicalGameState();
         Unit closestEnemy = null;
@@ -474,25 +510,17 @@ public class JarJarBinks extends AbstractionLayerAI {
                 }
             }
         }
+       
+        CheckBasePositions(p,gs);
         
-        for(Unit eBase:pgs.getUnits()) {
-            if (eBase.getPlayer()>=0 && eBase.getPlayer()!=p.getID() && eBase.getType() == baseType) {
-            	enemyBase = eBase;
-            }
-            }
-        for (Unit baseUnit:pgs.getUnits()) {
-        	if (baseUnit.getType()==baseType && 
-        		baseUnit.getPlayer() == p.getID()) {
-        		Base = baseUnit;
-        	}
-        	}
-        
-        /*if (closestEnemy!=null) 
+       /* if (closestEnemy!=null) 
         {
             attack(u,closestEnemy);
         }*/
         
-        if (closestDistance <= 7) 
+        System.out.println(enemyWorkers);
+        
+        if (closestDistance <= 7 || enemyWorkers < 4) 
         {
 	        if (closestEnemy!=null) 
 	        {
@@ -501,8 +529,10 @@ public class JarJarBinks extends AbstractionLayerAI {
         }
         else if (Base != null && enemyBase != null)// if (u.getY() < 7)
         {
+        	int RanY = ThreadLocalRandom.current().nextInt(-1,3);
+        	int RanY2 = ThreadLocalRandom.current().nextInt(3,5);
         	// Random number between -1 and 3
-        	int RanX = ThreadLocalRandom.current().nextInt(-2,5);
+        	int RanX = ThreadLocalRandom.current().nextInt(0,5);
         	// if player base is on left side 
         	if (Base.getX() < enemyBase.getX())
 			{
@@ -510,12 +540,12 @@ public class JarJarBinks extends AbstractionLayerAI {
         		if (RanX > 1)
         		{
         			move(u, ( Base.getX() + RanX), Base.getY() + 
-    						ThreadLocalRandom.current().nextInt(-1,3));
+    						RanY);
         		}
         		else
         		{
         			move(u, ( Base.getX() + RanX), Base.getY() + 
-    						ThreadLocalRandom.current().nextInt(3,5));
+    						RanY2);
         		}
 			}
 			else
@@ -523,18 +553,60 @@ public class JarJarBinks extends AbstractionLayerAI {
 				if (RanX > 1)
         		{
         			move(u, ( Base.getX() - RanX), Base.getY() - 
-    						ThreadLocalRandom.current().nextInt(-1,3));
+    						RanY);
         		}
         		else
         		{
         			move(u, ( Base.getX() - RanX), Base.getY() - 
-    						ThreadLocalRandom.current().nextInt(3,5));
+    						RanY2);
         		}
 			}
         }
     }
     
+    public void CheckBasePositions(Player p,GameState gs)
+    {
+    	//Unit baseUnit = null;
+    	
+    	PhysicalGameState pgs = gs.getPhysicalGameState();
+    	
+        for (Unit bUnit:pgs.getUnits()) 
+        {
+        	if (bUnit.getType()==baseType && 
+        		bUnit.getPlayer() == p.getID()) 
+        	{
+        		Base = bUnit;
+        	}
+        }
+        for (Unit bUnit:pgs.getUnits()) 
+        {
+        	if (bUnit.getType()==baseType && 
+        		bUnit.getPlayer() != p.getID()) 
+        	{
+        		enemyBase = bUnit;
+        	}
+        }
+        
+       // return baseUnit;
+    }
     
+    public Unit CheckEnemyBasePosition(Player p,GameState gs)
+    {
+    	Unit baseUnit = null;
+    	
+    	PhysicalGameState pgs = gs.getPhysicalGameState();
+    	
+        for (Unit bUnit:pgs.getUnits()) 
+        {
+        	if (bUnit.getType()==baseType && 
+        		bUnit.getPlayer() == p.getID()) 
+        	{
+        		baseUnit = bUnit;
+        	}
+        }
+        
+        return baseUnit;
+    }
 
 
     @Override
