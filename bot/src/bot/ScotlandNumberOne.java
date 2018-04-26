@@ -199,6 +199,12 @@ public class ScotlandNumberOne extends AbstractionLayerAI {
 	        	}
 
         
+	        	
+	    if (enemyBase == null)
+	    {
+	    	attack(u, closestEnemy);
+	    }
+	        	
 	    if (p.getResources() <= 5)
 	    {
 	    	attack(u, enemyBase);
