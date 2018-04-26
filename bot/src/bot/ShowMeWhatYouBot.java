@@ -259,6 +259,15 @@ public class ShowMeWhatYouBot extends AbstractionLayerAI {
     	// Return if no workers in list
 		if(workers.isEmpty()) {return;}
 		
+		// harvesters is half the number of total resources
+		double numberOfHarvesters = Math.ceil(gameInfo.get(resources));
+
+		List<Unit> harvesters = new LinkedList<Unit>();
+		
+		for ()
+		harvesters.add(workers);
+		
+		// Tell each worker what to do
 		for (Unit worker : workers)
 		{
 			// Init closest objects
@@ -293,14 +302,10 @@ public class ShowMeWhatYouBot extends AbstractionLayerAI {
 				}
 			}
 			
+			// Harvest resources
 			if(closestResource != null && closestBase != null)
 			{
-				AbstractAction aa = getAbstractAction(worker);
-				if(aa instanceof Harvest)
-				{
-					Harvest h_aa = (Harvest)aa;
-					if(h_aa.getTarget() != closestResource || h_aa.getBase() != closestBase) {harvest (worker, closestResource, closestBase);}
-				}else {harvest(worker, closestResource, closestBase);}
+				harvest(worker, closestResource, closestBase);
 			}
 		}
 		
