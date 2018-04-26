@@ -92,7 +92,7 @@ public class Node
 	        {
 	            m_ActionGenerator = new MyPlayerActionGenerator(gameState, minPlayer);
 	            m_ActionGenerator.randomizeOrder();
-//	            m_OrderedActionList = analysis.AnalyseAndSortActionSpace(m_ActionGenerator, m_GameState, endTime);
+	            m_OrderedActionList = analysis.AnalyseAndSortActionSpace(m_ActionGenerator, m_GameState, endTime);
 	            
 	            if (m_OrderedActionList.size() > m_MaxAmountOfNodeActionsToExamine) m_MaxActionIndex = m_MaxAmountOfNodeActionsToExamine;
 	            else m_MaxActionIndex = m_OrderedActionList.size();
