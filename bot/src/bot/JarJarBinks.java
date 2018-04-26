@@ -209,10 +209,7 @@ public class JarJarBinks extends AbstractionLayerAI {
         	{
         		enemyWorkers = 3;
         	}
-        	else if (mapSize == 144)
-        	{
-        		enemyWorkers = 3;
-        	}
+        	
         	else
         	{
         		enemyWorkers = workers + 1; // +1;
