@@ -73,10 +73,6 @@ public class ShowMeWhatYouBot extends AbstractionLayerAI {
     // This is what gets executed during the game
     public PlayerAction getAction(int playerNumber, GameState gameState) {
     	PhysicalGameState physicalGameState = gameState.getPhysicalGameState();
-    	Player player = gameState.getPlayer(playerNumber);
-    	
-    	// Flag for the base to tell the barracks to start building
-    	boolean enoughWorkers = false;
     	
     	//System.out.println(gameInfo.get(baseType));	
     	
@@ -116,16 +112,17 @@ public class ShowMeWhatYouBot extends AbstractionLayerAI {
     	
         
         // Control base
-        BaseController(bases, gameInfo, enoughWorkers);
-        
+        boolean enoughWorkers = BaseController(bases, gameInfo);
+
         // Prioritise creating enough workers
-        if(enoughWorkers == true) {
-        	// Control barracks (must be done after base)
-            BarracksController(barracks, gameInfo, enoughWorkers);
-        }
+        // Control barracks (must be done after base)
+        //if(enoughWorkers)
+        //{
+        	BarracksController(barracks, gameInfo);
+        //}
         
         // Move workers
-        WorkerController(workers, resources, bases, gameInfo, player, physicalGameState);
+        WorkerController(workers, resources, bases, gameInfo);
         
         return translateActions(playerNumber, gameState);
     }
@@ -192,10 +189,10 @@ public class ShowMeWhatYouBot extends AbstractionLayerAI {
     // __START OF UNIT CONTROLLERS__
     
     // Control base unit production
-    public void BaseController(List<Unit> bases,  Map <UnitType, Integer> gameInfo, boolean enoughWorkers)
+    public boolean BaseController(List<Unit> bases,  Map <UnitType, Integer> gameInfo)
     {
     	// Return if no bases in list
-    	if(bases.isEmpty()) {return;}
+    	if(bases.isEmpty()) {return true;}
     	
     	// Variables for creating workers based on resources
     	int totalFarmableResourcesNumber = gameInfo.get(resourceType);
@@ -207,42 +204,34 @@ public class ShowMeWhatYouBot extends AbstractionLayerAI {
     	if(numberOfWorkers < targetNumberOfWorkers) {
     		// Create a worker
     		train(bases.get(0), workerType);
+    		return true;
     	} 
     	else
     	{
     		// Let barracks train workers
-    		enoughWorkers = true;
+    		return false;
     		//System.out.println("Enough workers");
     	}
     }
     
- // Control base unit production
-    public void BarracksController(List<Unit> barracks,  Map <UnitType, Integer> gameInfo, boolean enoughWorkers)
+ // Control barracks unit production
+    public void BarracksController(List<Unit> barracks,  Map <UnitType, Integer> gameInfo)
     {
     	// Return if no bases in list
     	if(barracks.isEmpty()) {return;}
     	
-    	// Variables for creating workers based on resources
-    	int totalFarmableResourcesNumber = gameInfo.get(resourceType);
-    	int numberOfWorkers = gameInfo.get(workerType);
-    	double targetNumberOfWorkers = Math.ceil(totalFarmableResourcesNumber/2) + 1;
-    	
     	// Variables for creating defensive ranged units
     	int numberOfRanged = gameInfo.get(rangedType);
-    	int targetNumberOfRanged = 2;
+    	int targetNumberOfRanged = 1;
     	
-    	// Check if there are enough workers
-    	if(numberOfWorkers < targetNumberOfWorkers) {
-    		// Do nothing
-    	} 
-    	else if(numberOfRanged < targetNumberOfRanged)
+    	// Check if there are enough ranged units
+    	if(numberOfRanged < targetNumberOfRanged)
     	{
-    		System.out.println(numberOfRanged);
     		train(barracks.get(0), rangedType);
     	} 
     	else 
     	{
-    		System.out.println("Enough ranged");
+    		//System.out.println("Enough ranged");
     	}
     	
     	
@@ -250,7 +239,7 @@ public class ShowMeWhatYouBot extends AbstractionLayerAI {
     }
     
     // Control the workers
-    public void WorkerController(List<Unit> workers, List<Unit> resources, List<Unit> bases, Map <UnitType, Integer> gameInfo, Player player, PhysicalGameState physicalGameState)
+    public void WorkerController(List<Unit> workers, List<Unit> resources, List<Unit> bases, Map <UnitType, Integer> gameInfo)
 	{
     	
 		//List<Unit> freeWorkers = new LinkedList<Unit>();
@@ -259,10 +248,12 @@ public class ShowMeWhatYouBot extends AbstractionLayerAI {
     	// Return if no workers in list
 		if(workers.isEmpty()) {return;}
 		
-		// harvesters is half the number of total resources
-		//double numberOfHarvesters = Math.ceil(gameInfo.get(resources));
-
-		//List<Unit> harvesters = new LinkedList<Unit>();
+		if(gameInfo.get(barracksType) == 0)
+		{
+			build(workers.get(0), barracksType, bases.get(0).getX() + 1, bases.get(0).getY() + 1);
+			// Remove worker who is building
+			workers.remove(0);
+		}
 		
 		// Tell each worker what to do
 		for (Unit worker : workers)
@@ -307,6 +298,24 @@ public class ShowMeWhatYouBot extends AbstractionLayerAI {
 		}
 		
 	}
+    
+    // Control light units
+    public void LightController(List<Unit> ranged, Map <UnitType, Integer> gameInfo)
+    {
+    	
+    }
+    
+    // Control heavy units
+    public void HeavyController(List<Unit> ranged, Map <UnitType, Integer> gameInfo)
+    {
+    	
+    }
+    
+    // Control ranged units
+    public void RangedController(List<Unit> ranged, Map <UnitType, Integer> gameInfo)
+    {
+    	
+    }
     // __END OF UNIT CONTROLLERS__
     
     public List<ParameterSpecification> getParameters()
