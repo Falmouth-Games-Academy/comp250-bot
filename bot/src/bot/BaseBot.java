@@ -146,9 +146,17 @@ public class BaseBot extends AbstractionLayerAI {
         	BarracksController(barracks, gameInfo);
         }
         
-        // Control workers
-        WorkerController(workers, resources, bases, gameInfo, enoughWorkers, resourcesFarmed);
-        
+        if(bases.isEmpty())
+        {
+        	// Workers attack
+        	PrioritiseBases(workers, enemyUnits);
+        }
+        else
+        {
+        	// Control workers
+            WorkerController(workers, resources, bases, gameInfo, enoughWorkers, resourcesFarmed); 
+        }
+
         // Control light units
         PrioritiseBases(light, enemyUnits);
         
@@ -337,7 +345,7 @@ public class BaseBot extends AbstractionLayerAI {
 			{
 				build(workers.get(0), barracksType, bases.get(0).getX() - 3, bases.get(0).getY() + 1);
 			}
-			
+		
 			// Remove worker who is building
 			workers.remove(0);
 		}
