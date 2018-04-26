@@ -80,17 +80,17 @@ public class ShowMeWhatYouBot extends AbstractionLayerAI {
     	
     	//System.out.println(gameInfo.get(baseType));	
     	
-    	// TODO super list of all unit lists
+    	// Initialise map of unit lists
     	Map <String, List<Unit>> friendlyUnits = new HashMap<String, List<Unit>>();
-    	// Create unit lists
-    	// Static
+    	// Create unit lists and add to friendlyUnit map
+    	// Static units
     	List<Unit> bases = new LinkedList<Unit>();
     	friendlyUnits.put("bases", bases);
     	List<Unit> barracks = new LinkedList<Unit>();
     	friendlyUnits.put("barracks", barracks);
     	List<Unit> resources = new LinkedList<Unit>();
     	friendlyUnits.put("resources", resources);
-    	// Mobile
+    	// Mobile units
         List<Unit> workers = new LinkedList<Unit>();
         friendlyUnits.put("workers", workers);
         List<Unit> light = new LinkedList<Unit>();
@@ -117,11 +117,15 @@ public class ShowMeWhatYouBot extends AbstractionLayerAI {
         
         // Control base
         BaseController(bases, gameInfo, enoughWorkers);
-        // Control barracks (must be done after base)
-        BarracksController(barracks, gameInfo, enoughWorkers);
+        
+        // Prioritise creating enough workers
+        if(enoughWorkers == true) {
+        	// Control barracks (must be done after base)
+            BarracksController(barracks, gameInfo, enoughWorkers);
+        }
         
         // Move workers
-        WorkerController(workers, player, physicalGameState);
+        WorkerController(workers, resources, bases, gameInfo, player, physicalGameState);
         
         return translateActions(playerNumber, gameState);
     }
@@ -246,7 +250,7 @@ public class ShowMeWhatYouBot extends AbstractionLayerAI {
     }
     
     // Control the workers
-    public void WorkerController(List<Unit> workers, Player player, PhysicalGameState physicalGameState)
+    public void WorkerController(List<Unit> workers, List<Unit> resources, List<Unit> bases, Map <UnitType, Integer> gameInfo, Player player, PhysicalGameState physicalGameState)
 	{
     	
 		//List<Unit> freeWorkers = new LinkedList<Unit>();
@@ -255,45 +259,48 @@ public class ShowMeWhatYouBot extends AbstractionLayerAI {
     	// Return if no workers in list
 		if(workers.isEmpty()) {return;}
 		
-		for (Unit u : workers)
+		for (Unit worker : workers)
 		{
+			// Init closest objects
 			Unit closestBase = null;
 			Unit closestResource = null;
+			
+			// Init value to store distance value
 			int closestDistance = 0;
-			for(Unit u2 : physicalGameState.getUnits())
+			
+			// Find closes resource
+			for(Unit resource : resources)
 			{
-				if(u2.getType().isResource)
-				{
-					int d = Math.abs(u2.getX() - u.getX()) + Math.abs(u2.getY() - u.getY());
-					if(closestResource == null || d < closestDistance)
+					int distanceToResource = Math.abs(resource.getX() - worker.getX()) + Math.abs(resource.getY() - worker.getY());
+					if(closestResource == null || distanceToResource < closestDistance)
 					{
-						closestResource = u2;
-						closestDistance = d;
+						closestResource = resource;
+						closestDistance = distanceToResource;
 					}
-				}
 			}
+			
+			// Reset distance value
 			closestDistance = 0;
-			for(Unit u2 : physicalGameState.getUnits())
+			
+			// Find closest base
+			for(Unit base : bases)
 			{
-				if(u2.getType().isStockpile && u2.getPlayer() == player.getID())
+				int distanceToBase = Math.abs(base.getX() - worker.getX()) + Math.abs(base.getY() - worker.getY());
+				if(closestBase == null || distanceToBase < closestDistance)
 				{
-					int d = Math.abs(u2.getX() - u.getX()) + Math.abs(u2.getY() - u.getY());
-					if(closestBase == null || d < closestDistance)
-					{
-						closestBase = u2;
-						closestDistance = d;
-					}
+					closestBase = base;
+					closestDistance = distanceToBase;
 				}
 			}
 			
 			if(closestResource != null && closestBase != null)
 			{
-				AbstractAction aa = getAbstractAction(u);
+				AbstractAction aa = getAbstractAction(worker);
 				if(aa instanceof Harvest)
 				{
 					Harvest h_aa = (Harvest)aa;
-					if(h_aa.getTarget() != closestResource || h_aa.getBase() != closestBase) {harvest (u, closestResource, closestBase);}
-				}else {harvest(u, closestResource, closestBase);}
+					if(h_aa.getTarget() != closestResource || h_aa.getBase() != closestBase) {harvest (worker, closestResource, closestBase);}
+				}else {harvest(worker, closestResource, closestBase);}
 			}
 		}
 		
