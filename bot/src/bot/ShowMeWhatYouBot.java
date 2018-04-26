@@ -326,7 +326,7 @@ public class ShowMeWhatYouBot extends AbstractionLayerAI {
 		
 		if(gameInfo.get(barracksType) == 0 && enoughWorkers == true)
 		{
-			build(workers.get(0), barracksType, bases.get(0).getX() + 1, bases.get(0).getY() + 1);
+			build(workers.get(0), barracksType, bases.get(0).getX() + 1, bases.get(0).getY() - 1);
 			// Remove worker who is building
 			workers.remove(0);
 		}
@@ -385,7 +385,7 @@ public class ShowMeWhatYouBot extends AbstractionLayerAI {
     	}
     	
     	// What to attack
-    	Unit target = null;
+    	//Unit target = null;
     	
     	
     	// Go through all light units
@@ -399,7 +399,19 @@ public class ShowMeWhatYouBot extends AbstractionLayerAI {
     			//{
     			//	int distanceToWorker = Math.abs(enemy.getX() - unit.getX()) + Math.abs(enemy.getY() - unit.getY());
     			//}
-    		} 
+    		}
+    		else if(enemyUnits.get("light").size() != 0)
+    		{
+    			attack(unit, enemyUnits.get("light").get(0));
+    		}
+    		else if(enemyUnits.get("heavy").size() != 0)
+    		{
+    			attack(unit, enemyUnits.get("heavy").get(0));
+    		}
+    		else if(enemyUnits.get("ranged").size() != 0)
+    		{
+    			attack(unit, enemyUnits.get("ranged").get(0));
+    		}
     		else if(enemyUnits.get("bases").size() != 0)
     		{
     			attack(unit, enemyUnits.get("bases").get(0));
@@ -412,13 +424,39 @@ public class ShowMeWhatYouBot extends AbstractionLayerAI {
     }
     
     // Control heavy units
-    public void HeavyController(List<Unit> heavy, Map <String, List<Unit>> enemyUnits)
+    public void PrioritiseBases(List<Unit> unitGroup, Map <String, List<Unit>> enemyUnits)
     {
-    	// Return if no heavy units in list
-    	if(heavy.isEmpty())
+    	// Return if no light units in list
+    	if(unitGroup.isEmpty())
     	{
     		return;
     	}
+    	
+    	// What to attack
+    	//Unit target = null;
+    	
+    	
+    	// Go through all light units
+    	for(Unit unit : unitGroup)
+		{
+    		// Priority of which units to attack
+    		if(enemyUnits.get("bases").size() != 0)
+    		{
+    			attack(unit, enemyUnits.get("bases").get(0));
+    		}
+    		else if(enemyUnits.get("workers").size() != 0)
+    		{
+    			attack(unit, enemyUnits.get("workers").get(0));
+    			//for(Unit enemy : enemyUnits.get("workers"))
+    			//{
+    			//	int distanceToWorker = Math.abs(enemy.getX() - unit.getX()) + Math.abs(enemy.getY() - unit.getY());
+    			//}
+    		} 
+    		else if(enemyUnits.get("barracks").size() != 0)
+    		{
+    			attack(unit, enemyUnits.get("barracks").get(0));
+    		}
+		}
     }
     
     // Control ranged units
