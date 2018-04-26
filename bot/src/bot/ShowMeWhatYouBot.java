@@ -21,6 +21,7 @@ import rts.*;
 import rts.units.Unit;
 import rts.units.UnitType;
 import rts.units.UnitTypeTable;
+import rts.UnitAction;
 
 /**
  *
@@ -76,7 +77,8 @@ public class ShowMeWhatYouBot extends AbstractionLayerAI {
     	
     	//System.out.println(gameInfo.get(baseType));	
     	
-    	// Initialise map of unit lists
+    	// __GATHERING AND STORING OF GAME INFO START__
+    	// Initialise maps of friendly unit lists
     	Map <String, List<Unit>> friendlyUnits = new HashMap<String, List<Unit>>();
     	// Create unit lists and add to friendlyUnit map
     	// Static units
@@ -96,10 +98,29 @@ public class ShowMeWhatYouBot extends AbstractionLayerAI {
         List<Unit> ranged = new LinkedList<Unit>();
         friendlyUnits.put("ranged", ranged);
         
+        // Initialise maps of enemy unit lists
+        Map <String, List<Unit>> enemyUnits = new HashMap<String, List<Unit>>();
+        // Create unit lists and add to enemyUnit map
+        // Static units
+        List<Unit> enemyBases = new LinkedList<Unit>();
+        enemyUnits.put("bases", enemyBases);
+        List<Unit> enemyBarracks = new LinkedList<Unit>();
+        enemyUnits.put("barracks", enemyBarracks);
+        // Mobile units
+        List<Unit> enemyWorkers = new LinkedList<Unit>();
+        enemyUnits.put("workers", enemyWorkers);
+        List<Unit> enemyLight = new LinkedList<Unit>();
+        enemyUnits.put("light", enemyLight);
+        List<Unit> enemyHeavy = new LinkedList<Unit>();
+        enemyUnits.put("heavy", enemyHeavy);
+        List<Unit> enemyenemyRanged = new LinkedList<Unit>();
+        enemyUnits.put("ranged", enemyenemyRanged);
+        
         // Populate unit lists
         AddUnitsToLists(friendlyUnits, playerNumber, physicalGameState);
+        AddEnemyUnitsToLists(enemyUnits, playerNumber, physicalGameState);
         
-        // Create map of unit numbers
+        // Create map of friendly unit numbers
     	Map <UnitType, Integer> gameInfo = new HashMap<UnitType, Integer>();
     	// Fill game information using unit lists
     	gameInfo.put(baseType, bases.size());
@@ -108,35 +129,38 @@ public class ShowMeWhatYouBot extends AbstractionLayerAI {
     	gameInfo.put(workerType, workers.size());
     	gameInfo.put(lightType, light.size());
     	gameInfo.put(heavyType, heavy.size());
-    	gameInfo.put(rangedType, ranged.size());
+    	gameInfo.put(rangedType, ranged.size());	
     	
-        
+    	
+    	// __CONTROLLING UNITS START__
         // Control base
         boolean enoughWorkers = BaseController(bases, gameInfo);
-
+        
         // Prioritise creating enough workers
         // Control barracks (must be done after base)
-        //if(enoughWorkers)
-        //{
+        if(enoughWorkers)
+        {
         	BarracksController(barracks, gameInfo);
-        //}
+        }
         
-        // Move workers
-        WorkerController(workers, resources, bases, gameInfo);
+        // Control workers
+        WorkerController(workers, resources, bases, gameInfo, enoughWorkers);
+        
+        // Control light units
+        LightController(ranged, enemyUnits);
+        
+        // Control heavy units
+        HeavyController(ranged, enemyUnits);
+        
+        // Control ranged units
+        RangedController(ranged, enemyUnits);
         
         return translateActions(playerNumber, gameState);
     }
     
-    // Increases map value by 1
-    public void IncrementMapValue(Map <UnitType, Integer> map, UnitType key) 
-    {
-    	map.replace(key, map.get(key) + 1);
-    }
-    
-    // Adds all my units to their respective lists
+    // Adds all friendly units to their respective lists
     public void AddUnitsToLists(Map <String, List<Unit>> friendlyUnits, int playerNumber, PhysicalGameState physicalGameState) 
     {
-    	
     	for (Unit unit : physicalGameState.getUnits()) 
     	{
     		// Get unit type
@@ -186,30 +210,78 @@ public class ShowMeWhatYouBot extends AbstractionLayerAI {
     	}
     }
     
+ // Adds all friendly units to their respective lists
+    public void AddEnemyUnitsToLists(Map <String, List<Unit>> friendlyUnits, int playerNumber, PhysicalGameState physicalGameState) 
+    {
+    	for (Unit unit : physicalGameState.getUnits()) 
+    	{
+    		// Check if they are enemy units
+    		if(unit.getPlayer() != playerNumber) 
+    		{	
+    			// Get unit type
+    			UnitType unitType = unit.getType();
+    			
+    			// Add base
+    			if(unitType == baseType) 
+    			{
+    				friendlyUnits.get("bases").add(unit);
+    			}
+    			// Ass barracks
+    			else if(unitType == barracksType) 
+    			{
+    				friendlyUnits.get("barracks").add(unit);
+    			}
+    			// Add harvesting workers
+    			else if(unitType.canHarvest) 
+    			{
+    				friendlyUnits.get("workers").add(unit);
+    			}
+    			// Add light units
+    			else if(unitType == lightType)
+    			{
+    				friendlyUnits.get("light").add(unit);
+    			}
+    			// Add heavy units
+    			else if(unitType == heavyType)
+    			{
+    				friendlyUnits.get("heavy").add(unit);
+    			}
+    			// Add ranged units
+    			else if(unitType == rangedType)
+    			{
+    				friendlyUnits.get("ranged").add(unit);
+    			}
+    		}
+    	}
+    }
+    
     // __START OF UNIT CONTROLLERS__
     
     // Control base unit production
     public boolean BaseController(List<Unit> bases,  Map <UnitType, Integer> gameInfo)
     {
     	// Return if no bases in list
-    	if(bases.isEmpty()) {return true;}
+    	if(bases.isEmpty()) 
+    	{
+    		return true;
+    	}
     	
     	// Variables for creating workers based on resources
     	int totalFarmableResourcesNumber = gameInfo.get(resourceType);
     	int numberOfWorkers = gameInfo.get(workerType);
-    	double targetNumberOfWorkers = Math.ceil(totalFarmableResourcesNumber/2) + 1;
+    	double targetNumberOfWorkers = Math.ceil(totalFarmableResourcesNumber/2);
     	
     	
     	// Check if there are enough workers
     	if(numberOfWorkers < targetNumberOfWorkers) {
     		// Create a worker
     		train(bases.get(0), workerType);
-    		return true;
+    		return false;
     	} 
     	else
     	{
     		// Let barracks train workers
-    		return false;
+    		return true;
     		//System.out.println("Enough workers");
     	}
     }
@@ -222,7 +294,7 @@ public class ShowMeWhatYouBot extends AbstractionLayerAI {
     	
     	// Variables for creating defensive ranged units
     	int numberOfRanged = gameInfo.get(rangedType);
-    	int targetNumberOfRanged = 1;
+    	int targetNumberOfRanged = 2;
     	
     	// Check if there are enough ranged units
     	if(numberOfRanged < targetNumberOfRanged)
@@ -231,7 +303,8 @@ public class ShowMeWhatYouBot extends AbstractionLayerAI {
     	} 
     	else 
     	{
-    		//System.out.println("Enough ranged");
+    		// Train light units
+    		train(barracks.get(0), lightType);
     	}
     	
     	
@@ -239,16 +312,19 @@ public class ShowMeWhatYouBot extends AbstractionLayerAI {
     }
     
     // Control the workers
-    public void WorkerController(List<Unit> workers, List<Unit> resources, List<Unit> bases, Map <UnitType, Integer> gameInfo)
+    public void WorkerController(List<Unit> workers, List<Unit> resources, List<Unit> bases, Map <UnitType, Integer> gameInfo, boolean enoughWorkers)
 	{
     	
 		//List<Unit> freeWorkers = new LinkedList<Unit>();
 		//freeWorkers.addAll(workers);
     	
     	// Return if no workers in list
-		if(workers.isEmpty()) {return;}
+		if(workers.isEmpty()) 
+		{
+			return;
+		}
 		
-		if(gameInfo.get(barracksType) == 0)
+		if(gameInfo.get(barracksType) == 0 && enoughWorkers == true)
 		{
 			build(workers.get(0), barracksType, bases.get(0).getX() + 1, bases.get(0).getY() + 1);
 			// Remove worker who is building
@@ -300,21 +376,51 @@ public class ShowMeWhatYouBot extends AbstractionLayerAI {
 	}
     
     // Control light units
-    public void LightController(List<Unit> ranged, Map <UnitType, Integer> gameInfo)
+    public void LightController(List<Unit> light, Map <String, List<Unit>> enemyUnits)
     {
+    	// Return if no light units in list
+    	if(light.isEmpty())
+    	{
+    		return;
+    	}
     	
+    	// What to attack
+    	Unit target = null;
+    	
+    	
+    	// Go through all light units
+    	for(Unit unit : light)
+		{
+    		// Priority of which units to attack
+    		if(enemyUnits.get("workers").size() != 0)
+    		{
+    			
+    			//for(Unit enemy : enemyUnits.get("workers"))
+    			//{
+    			//	int distanceToWorker = Math.abs(enemy.getX() - unit.getX()) + Math.abs(enemy.getY() - unit.getY());
+    			//}
+    		}
+		}
     }
     
     // Control heavy units
-    public void HeavyController(List<Unit> ranged, Map <UnitType, Integer> gameInfo)
+    public void HeavyController(List<Unit> heavy, Map <String, List<Unit>> enemyUnits)
     {
-    	
+    	// Return if no heavy units in list
+    	if(heavy.isEmpty())
+    	{
+    		return;
+    	}
     }
     
     // Control ranged units
-    public void RangedController(List<Unit> ranged, Map <UnitType, Integer> gameInfo)
+    public void RangedController(List<Unit> ranged, Map <String, List<Unit>> enemyUnits)
     {
-    	
+    	// Return if no ranged units in list
+    	if(ranged.isEmpty())
+    	{
+    		return;
+    	}
     }
     // __END OF UNIT CONTROLLERS__
     
