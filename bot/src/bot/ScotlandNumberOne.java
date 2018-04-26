@@ -199,7 +199,7 @@ public class ScotlandNumberOne extends AbstractionLayerAI {
 	        	}
 
         
-	    if (p.getResources() <= 6)
+	    if (p.getResources() <= 5)
 	    {
 	    	attack(u, enemyBase);
 	    	attack(u, closestEnemy);
@@ -216,12 +216,12 @@ public class ScotlandNumberOne extends AbstractionLayerAI {
         		if (Ran1 > 1)
         		{
         			move(u, ( Base.getX() + Ran1), Base.getY() + 
-    						ThreadLocalRandom.current().nextInt(-1,3));
+    						ThreadLocalRandom.current().nextInt(-3,3));
         		}
         		else
         		{
         			move(u, ( Base.getX() + Ran1), Base.getY() + 
-    						ThreadLocalRandom.current().nextInt(2,4));
+    						ThreadLocalRandom.current().nextInt(3,4));
         		}
 			}
 			else
