@@ -38,6 +38,7 @@ public class ScotlandNumberOne extends AbstractionLayerAI {
     int unitCount;
     
     int mapSize = 0;
+	Unit Base = null;
 
 
     public ScotlandNumberOne(UnitTypeTable a_utt) 
@@ -80,6 +81,15 @@ public class ScotlandNumberOne extends AbstractionLayerAI {
         
         //Gets size of the map
         mapSize = pgs.getWidth() * pgs.getHeight();
+        
+        for (Unit bUnit:pgs.getUnits()) 
+        {
+        	if (bUnit.getType()==baseType && 
+        		bUnit.getPlayer() == p.getID()) 
+        	{
+        		Base = bUnit;
+        	}
+        }
         
         // behavior of bases:
         for (Unit u : pgs.getUnits()) 
@@ -142,7 +152,11 @@ public class ScotlandNumberOne extends AbstractionLayerAI {
                 nworkers++;
             }
         }
-        if (p.getResources() >= workerType.cost && nworkers < 3) 
+        if (p.getResources() >= workerType.cost && nworkers < 2 && mapSize <=72 ) 
+        {
+            train(u, workerType);
+        }
+        else if (p.getResources() >= workerType.cost && nworkers < 3 && mapSize >=72 ) 
         {
             train(u, workerType);
         }
@@ -258,17 +272,28 @@ public class ScotlandNumberOne extends AbstractionLayerAI {
         int nbases = 0;
         int nbarracks = 0;
         int harvestingWorkers = 0;
-        int maxHarvestingWorkers = 3;
+        int maxHarvestingWorkers = 2;
 
         int resourcesUsed = 0;
         List<Unit> freeWorkers = new LinkedList<Unit>();
         List<Unit> attackingWorkers = new LinkedList<Unit>();
+        System.out.println(attackingWorkers);
         //freeWorkers.addAll(workers);
         
-        if (mapSize <=64)
+        if (mapSize <=72)
         {
-        	maxHarvestingWorkers = 1;
+        	maxHarvestingWorkers = 2;
         }
+        
+        if (p.getResources() == 0)
+        {
+        	for (Unit u : workers)
+        	{
+        		freeWorkers.remove(u);
+        		attackingWorkers.add(u);
+        	}
+        }
+        	
 
         for (Unit u : workers)
         {
@@ -324,12 +349,12 @@ public class ScotlandNumberOne extends AbstractionLayerAI {
                 Unit u = freeWorkers.remove(0);
                 if (u.getPlayer() == 0)
                 {
-                    buildIfNotAlreadyBuilding(u,barracksType,u.getX()+1,u.getY()+1,reservedPositions,p,pgs);
+                    buildIfNotAlreadyBuilding(u,barracksType,Base.getX()+1,Base.getY()+1,reservedPositions,p,pgs);
                 	resourcesUsed += barracksType.cost;
                 }
                 else
                 {
-                    buildIfNotAlreadyBuilding(u,barracksType,u.getX(),u.getY(),reservedPositions,p,pgs);
+                    buildIfNotAlreadyBuilding(u,barracksType,Base.getX(),Base.getY()+1,reservedPositions,p,pgs);
                 	resourcesUsed += barracksType.cost;
                 }
                 	
@@ -421,7 +446,7 @@ public class ScotlandNumberOne extends AbstractionLayerAI {
         	}
         
         
-        if (closestDistance <= 8) 
+        if (closestDistance <= 4) 
         {
         	attack(u,closestEnemy); 
 
