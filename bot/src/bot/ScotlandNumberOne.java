@@ -421,7 +421,7 @@ public class ScotlandNumberOne extends AbstractionLayerAI {
         	}
         
         
-        if (closestDistance <= 7) 
+        if (closestDistance <= 8) 
         {
         	attack(u,closestEnemy); 
 
