@@ -74,6 +74,7 @@ public class BaseBot extends AbstractionLayerAI {
     // This is what gets executed during the game
     public PlayerAction getAction(int playerNumber, GameState gameState) {
     	PhysicalGameState physicalGameState = gameState.getPhysicalGameState();
+    	Player player = physicalGameState.getPlayer(playerNumber);
     	
     	//System.out.println(gameInfo.get(baseType));	
     	
@@ -133,6 +134,8 @@ public class BaseBot extends AbstractionLayerAI {
     	
     	
     	// __CONTROLLING UNITS START__
+    	int resourcesFarmed = player.getResources();
+    	
         // Control base
         boolean enoughWorkers = BaseController(bases, gameInfo);
         
@@ -144,16 +147,16 @@ public class BaseBot extends AbstractionLayerAI {
         }
         
         // Control workers
-        WorkerController(workers, resources, bases, gameInfo, enoughWorkers);
+        WorkerController(workers, resources, bases, gameInfo, enoughWorkers, resourcesFarmed);
         
         // Control light units
-        PrioritiseWorkers(light, enemyUnits);
+        PrioritiseBases(light, enemyUnits);
         
         // Control heavy units
-        PrioritiseWorkers(heavy, enemyUnits);
+        PrioritiseBases(heavy, enemyUnits);
         
         // Control ranged units
-        PrioritiseWorkers(ranged, enemyUnits);
+        PrioritiseBases(ranged, enemyUnits);
         
         return translateActions(playerNumber, gameState);
     }
@@ -255,7 +258,7 @@ public class BaseBot extends AbstractionLayerAI {
     	}
     }
     
-// __START OF UNIT CONTROLLERS__
+    // __START OF UNIT CONTROLLERS__
     
     // Control base unit production
     public boolean BaseController(List<Unit> bases,  Map <UnitType, Integer> gameInfo)
@@ -312,7 +315,7 @@ public class BaseBot extends AbstractionLayerAI {
     }
     
     // Control the workers
-    public void WorkerController(List<Unit> workers, List<Unit> resources, List<Unit> bases, Map <UnitType, Integer> gameInfo, boolean enoughWorkers)
+    public void WorkerController(List<Unit> workers, List<Unit> resources, List<Unit> bases, Map <UnitType, Integer> gameInfo, boolean enoughWorkers, int resourcesFarmed)
 	{
     	
 		//List<Unit> freeWorkers = new LinkedList<Unit>();
@@ -324,9 +327,17 @@ public class BaseBot extends AbstractionLayerAI {
 			return;
 		}
 		
-		if(gameInfo.get(barracksType) == 0 && enoughWorkers == true)
+		if(gameInfo.get(barracksType) == 0 && enoughWorkers == true && barracksType.cost < resourcesFarmed)
 		{
-			build(workers.get(0), barracksType, bases.get(0).getX() + 1, bases.get(0).getY() - 1);
+			if(bases.get(0).getY() < 5)
+			{
+				build(workers.get(0), barracksType, bases.get(0).getX() + 3, bases.get(0).getY() - 1);
+			}
+			else
+			{
+				build(workers.get(0), barracksType, bases.get(0).getX() - 3, bases.get(0).getY() + 1);
+			}
+			
 			// Remove worker who is building
 			workers.remove(0);
 		}
