@@ -147,13 +147,13 @@ public class ShowMeWhatYouBot extends AbstractionLayerAI {
         WorkerController(workers, resources, bases, gameInfo, enoughWorkers);
         
         // Control light units
-        LightController(ranged, enemyUnits);
+        PrioritiseWorkers(light, enemyUnits);
         
         // Control heavy units
-        HeavyController(ranged, enemyUnits);
+        PrioritiseWorkers(heavy, enemyUnits);
         
         // Control ranged units
-        RangedController(ranged, enemyUnits);
+        PrioritiseWorkers(ranged, enemyUnits);
         
         return translateActions(playerNumber, gameState);
     }
@@ -376,10 +376,10 @@ public class ShowMeWhatYouBot extends AbstractionLayerAI {
 	}
     
     // Control light units
-    public void LightController(List<Unit> light, Map <String, List<Unit>> enemyUnits)
+    public void PrioritiseWorkers(List<Unit> unitGroup, Map <String, List<Unit>> enemyUnits)
     {
     	// Return if no light units in list
-    	if(light.isEmpty())
+    	if(unitGroup.isEmpty())
     	{
     		return;
     	}
@@ -389,16 +389,24 @@ public class ShowMeWhatYouBot extends AbstractionLayerAI {
     	
     	
     	// Go through all light units
-    	for(Unit unit : light)
+    	for(Unit unit : unitGroup)
 		{
     		// Priority of which units to attack
     		if(enemyUnits.get("workers").size() != 0)
     		{
-    			
+    			attack(unit, enemyUnits.get("workers").get(0));
     			//for(Unit enemy : enemyUnits.get("workers"))
     			//{
     			//	int distanceToWorker = Math.abs(enemy.getX() - unit.getX()) + Math.abs(enemy.getY() - unit.getY());
     			//}
+    		} 
+    		else if(enemyUnits.get("bases").size() != 0)
+    		{
+    			attack(unit, enemyUnits.get("bases").get(0));
+    		}
+    		else if(enemyUnits.get("barracks").size() != 0)
+    		{
+    			attack(unit, enemyUnits.get("barracks").get(0));
     		}
 		}
     }
@@ -421,6 +429,20 @@ public class ShowMeWhatYouBot extends AbstractionLayerAI {
     	{
     		return;
     	}
+    	
+    	// Go through all light units
+    	for(Unit unit : ranged)
+		{
+    		// Priority of which units to attack
+    		if(enemyUnits.get("workers").size() != 0)
+    		{
+    			attack(unit, enemyUnits.get("workers").get(0));
+    			//for(Unit enemy : enemyUnits.get("workers"))
+    			//{
+    			//	int distanceToWorker = Math.abs(enemy.getX() - unit.getX()) + Math.abs(enemy.getY() - unit.getY());
+    			//}
+    		}
+		}
     }
     // __END OF UNIT CONTROLLERS__
     
