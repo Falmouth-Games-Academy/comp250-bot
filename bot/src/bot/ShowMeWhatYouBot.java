@@ -11,8 +11,10 @@ import ai.abstraction.pathfinding.AStarPathFinding;
 import ai.core.AI;
 import ai.core.ParameterSpecification;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 
 import rts.*;
@@ -28,9 +30,12 @@ public class ShowMeWhatYouBot extends AbstractionLayerAI {
 	
 	Random r = new Random();
 	protected UnitTypeTable utt;
-	UnitType workerType;
+	// Static units
 	UnitType baseType;
 	UnitType barracksType;
+	UnitType resourceType;
+	// Mobile units
+	UnitType workerType;
 	UnitType rangedType;
 	UnitType lightType;
 	UnitType heavyType;
@@ -39,12 +44,10 @@ public class ShowMeWhatYouBot extends AbstractionLayerAI {
     	this(a_utt, new AStarPathFinding());
     }
     
-
     public ShowMeWhatYouBot(UnitTypeTable utt, AStarPathFinding aStarPathFinding) {
     	super(aStarPathFinding);
     	reset(utt);
     }
-    
     
     public void reset() {
     	super.reset();
@@ -52,59 +55,151 @@ public class ShowMeWhatYouBot extends AbstractionLayerAI {
     
     public void reset(UnitTypeTable a_utt) {
         utt = a_utt;
-        workerType = utt.getUnitType("Worker");
+        // Add static units to type table
         baseType = utt.getUnitType("Base");
         barracksType = utt.getUnitType("Barracks");
-        rangedType = utt.getUnitType("Ranged");
+        resourceType = utt.getUnitType("Resource");
+        // Add mobile units to type table
+        workerType = utt.getUnitType("Worker");
         lightType = utt.getUnitType("Light");
+        heavyType = utt.getUnitType("Heavy");
+        rangedType = utt.getUnitType("Ranged");
     }
     
     public AI clone() {
         return new ShowMeWhatYouBot(utt);
-        //return new ShowMeWhatYouBot(utt, pf);
     }
    
-    
-    public PlayerAction getAction(int player, GameState gs) {
-    	PhysicalGameState pgs = gs.getPhysicalGameState();
-    	Player p = gs.getPlayer(player);
-
+    // This is what gets executed during the game
+    public PlayerAction getAction(int playerNumber, GameState gameState) {
+    	PhysicalGameState physicalGameState = gameState.getPhysicalGameState();
+    	Player player = gameState.getPlayer(playerNumber);
+    	
+    	//System.out.println(gameInfo.get(baseType));	
+    	
+    	// TODO super list of all unit lists
+    	//List<List<Unit>> myUnits = new ArrayList<List<Unit>>();
+    	
+    	// Create unit lists
         List<Unit> workers = new LinkedList<Unit>();
-        for (Unit u : pgs.getUnits()) {
-            if (u.getType().canHarvest
-                    && u.getPlayer() == player) {
-                workers.add(u);
-            }
-        }
+        List<Unit> light = new LinkedList<Unit>();
+        List<Unit> heavy = new LinkedList<Unit>();
+        List<Unit> ranged = new LinkedList<Unit>();
+        // Populate unit lists
+        AddAllUnitsToLists(workers, light, heavy, ranged, playerNumber, physicalGameState);
         
-        workerBehavior(workers, p, pgs);
-
-        return translateActions(player, gs);
+        // Create map of unit numbers
+    	Map <UnitType, Integer> gameInfo = new HashMap<UnitType, Integer>();
+    	// Fill game information using unit lists
+    	gameInfo.put(workerType, workers.size());
+    	gameInfo.put(lightType, light.size());
+    	gameInfo.put(heavyType, heavy.size());
+    	gameInfo.put(rangedType, ranged.size());
+    	
+    	// Get info for remaining units
+    	GetGameInfo(gameInfo, playerNumber, physicalGameState);
+        
+    	// Move workers
+        WorkerController(workers, player, physicalGameState);
+        
+        return translateActions(playerNumber, gameState);
     }
-
-    public void workerBehavior(List<Unit> workers, Player p, PhysicalGameState pgs)
+    
+    // Increases map value by 1
+    public void IncrementMapValue(Map <UnitType, Integer> map, UnitType key) 
+    {
+    	map.replace(key, map.get(key) + 1);
+    }
+    
+    // Fill map with number or each unit I own
+    public void GetGameInfo(Map <UnitType, Integer> gameInfo, int playerNumber, PhysicalGameState physicalGameState) 
+    {
+    	// Fill map with 0 values for unknown unit values
+    	gameInfo.put(baseType, 0);
+    	gameInfo.put(barracksType, 0);
+    	gameInfo.put(resourceType, 0);
+    	
+    	for (Unit unit : physicalGameState.getUnits()) 
+    	{
+    		// Get unit type
+			UnitType unitType = unit.getType();
+			
+    		// Check unit is mine
+    		if(unit.getPlayer() == playerNumber) 
+    		{
+    			// Add my bases to gameInfo
+    			if(unitType == baseType) 
+    			{
+    				IncrementMapValue(gameInfo, baseType);
+    			}
+    			// Add my barracks to gameInfo
+    			else if(unitType == barracksType) 
+    			{
+    				IncrementMapValue(gameInfo, barracksType);
+    			}
+    		}
+    		else 
+    		{
+    			// Add resource number to gameInfo
+    			if(unitType == resourceType)
+    			{
+    				IncrementMapValue(gameInfo, resourceType);
+    			}
+    		}
+    	}
+    }
+    
+    // Adds all my units to their respective lists
+    public void AddAllUnitsToLists(List<Unit>workers, List<Unit>light, List<Unit> heavy, List<Unit> ranged, int playerNumber, PhysicalGameState physicalGameState) 
+    {
+    	for (Unit unit : physicalGameState.getUnits()) 
+    	{
+    		// Check if they are my units
+    		if(unit.getPlayer() == playerNumber) 
+    		{
+    			// Get unit type
+    			UnitType unitType = unit.getType();
+    			
+    			// Add harvesting workers
+    			if(unitType.canHarvest) 
+    			{
+    				workers.add(unit);
+    			}
+    			// Add light units
+    			else if(unitType == lightType) 
+    			{
+    				light.add(unit);
+    			}
+    			// Add heavy units
+    			else if(unitType == heavyType)
+    			{
+    				heavy.add(unit);
+    			}
+    			// Add ranged units
+    			else if(unitType == ranged)
+    			{
+    				ranged.add(unit);
+    			}
+    		}
+    	}
+    }
+    
+    // __START OF UNIT CONTROLLERS__
+    // Control the workers
+    public void WorkerController(List<Unit> workers, Player player, PhysicalGameState physicalGameState)
 	{
-		int baseNum = 0;
-		int barrackNum = 0;
-		int usedResourceNum = 0;
-		
-		List<Unit> freeWorkers = new LinkedList<Unit>();
-		freeWorkers.addAll(workers);
+    	
+		//List<Unit> freeWorkers = new LinkedList<Unit>();
+		//freeWorkers.addAll(workers);
 		
 		if(workers.isEmpty()) {return;}
 		
-		for (Unit u2 : pgs.getUnits())
-		{
-			if(u2.getType() == baseType && u2.getPlayer() == p.getID()) {baseNum++;}
-			if(u2.getType() == barracksType && u2.getPlayer() == p.getID()) {barrackNum++;}
-		}
-		
-		for (Unit u : freeWorkers)
+		for (Unit u : workers)
 		{
 			Unit closestBase = null;
 			Unit closestResource = null;
 			int closestDistance = 0;
-			for(Unit u2 : pgs.getUnits())
+			for(Unit u2 : physicalGameState.getUnits())
 			{
 				if(u2.getType().isResource)
 				{
@@ -117,9 +212,9 @@ public class ShowMeWhatYouBot extends AbstractionLayerAI {
 				}
 			}
 			closestDistance = 0;
-			for(Unit u2 : pgs.getUnits())
+			for(Unit u2 : physicalGameState.getUnits())
 			{
-				if(u2.getType().isStockpile && u2.getPlayer() == p.getID())
+				if(u2.getType().isStockpile && u2.getPlayer() == player.getID())
 				{
 					int d = Math.abs(u2.getX() - u.getX()) + Math.abs(u2.getY() - u.getY());
 					if(closestBase == null || d < closestDistance)
@@ -142,6 +237,7 @@ public class ShowMeWhatYouBot extends AbstractionLayerAI {
 		}
 		
 	}
+    // __END OF UNIT CONTROLLERS__
     
     public List<ParameterSpecification> getParameters()
     {
