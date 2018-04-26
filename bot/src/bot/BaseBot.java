@@ -147,13 +147,13 @@ public class BaseBot extends AbstractionLayerAI {
         WorkerController(workers, resources, bases, gameInfo, enoughWorkers);
         
         // Control light units
-        PrioritiseBases(light, enemyUnits);
+        PrioritiseWorkers(light, enemyUnits);
         
         // Control heavy units
-        PrioritiseBases(heavy, enemyUnits);
+        PrioritiseWorkers(heavy, enemyUnits);
         
         // Control ranged units
-        PrioritiseBases(ranged, enemyUnits);
+        PrioritiseWorkers(ranged, enemyUnits);
         
         return translateActions(playerNumber, gameState);
     }
@@ -423,7 +423,51 @@ public class BaseBot extends AbstractionLayerAI {
 		}
     }
     
-    // Control heavy units
+ // Attack workers first
+    public void PrioritiseWorkers(List<Unit> unitGroup, Map <String, List<Unit>> enemyUnits)
+    {
+    	// Return if no light units in list
+    	if(unitGroup.isEmpty())
+    	{
+    		return;
+    	}
+    	
+    	// What to attack
+    	//Unit target = null;
+    	
+    	
+    	// Go through all light units
+    	for(Unit unit : unitGroup)
+		{
+    		// Priority of which units to attack
+    		if(enemyUnits.get("workers").size() != 0)
+    		{
+    			AttackNearest(unit, enemyUnits.get("workers"));
+    		}
+    		else if(enemyUnits.get("bases").size() != 0)
+    		{
+    			AttackNearest(unit, enemyUnits.get("bases"));
+    		}
+    		else if(enemyUnits.get("light").size() != 0)
+    		{
+    			AttackNearest(unit, enemyUnits.get("light"));
+    		}
+    		else if(enemyUnits.get("heavy").size() != 0)
+    		{
+    			AttackNearest(unit, enemyUnits.get("heavy"));
+    		}
+    		else if(enemyUnits.get("ranged").size() != 0)
+    		{
+    			AttackNearest(unit, enemyUnits.get("ranged"));
+    		}
+    		else if(enemyUnits.get("barracks").size() != 0)
+    		{
+    			AttackNearest(unit, enemyUnits.get("barracks"));
+    		}
+		}
+    }
+    
+    // Attacks bases first
     public void PrioritiseBases(List<Unit> unitGroup, Map <String, List<Unit>> enemyUnits)
     {
     	// Return if no light units in list
@@ -446,53 +490,45 @@ public class BaseBot extends AbstractionLayerAI {
     		}
     		else if(enemyUnits.get("workers").size() != 0)
     		{
-    			attack(unit, enemyUnits.get("workers").get(0));
-    			//for(Unit enemy : enemyUnits.get("workers"))
-    			//{
-    			//	int distanceToWorker = Math.abs(enemy.getX() - unit.getX()) + Math.abs(enemy.getY() - unit.getY());
-    			//}
+    			AttackNearest(unit, enemyUnits.get("workers"));
     		} 
     		else if(enemyUnits.get("barracks").size() != 0)
     		{
-    			attack(unit, enemyUnits.get("barracks").get(0));
+    			AttackNearest(unit, enemyUnits.get("barracks"));
     		}
     		else if(enemyUnits.get("light").size() != 0)
     		{
-    			attack(unit, enemyUnits.get("light").get(0));
+    			AttackNearest(unit, enemyUnits.get("light"));
     		}
     		else if(enemyUnits.get("heavy").size() != 0)
     		{
-    			attack(unit, enemyUnits.get("heavy").get(0));
+    			AttackNearest(unit, enemyUnits.get("heavy"));
     		}
     		else if(enemyUnits.get("ranged").size() != 0)
     		{
-    			attack(unit, enemyUnits.get("ranged").get(0));
+    			AttackNearest(unit, enemyUnits.get("ranged"));
     		}
 		}
     }
     
     // Control ranged units
-    public void RangedController(List<Unit> ranged, Map <String, List<Unit>> enemyUnits)
+    public void AttackNearest(Unit playerUnit, List<Unit> enemyUnits)
     {
-    	// Return if no ranged units in list
-    	if(ranged.isEmpty())
-    	{
-    		return;
-    	}
+    	Unit closestEnemy = null;
+    	int closestDistance = 0;
     	
-    	// Go through all light units
-    	for(Unit unit : ranged)
+    	for(Unit enemy : enemyUnits)
 		{
-    		// Priority of which units to attack
-    		if(enemyUnits.get("workers").size() != 0)
-    		{
-    			attack(unit, enemyUnits.get("workers").get(0));
-    			//for(Unit enemy : enemyUnits.get("workers"))
-    			//{
-    			//	int distanceToWorker = Math.abs(enemy.getX() - unit.getX()) + Math.abs(enemy.getY() - unit.getY());
-    			//}
-    		}
+    		int distanceToWorker = Math.abs(enemy.getX() - playerUnit.getX()) + Math.abs(enemy.getY() - playerUnit.getY());
+    		
+			if(closestEnemy == null || distanceToWorker < closestDistance)
+			{
+				closestEnemy = enemy;
+				closestDistance = distanceToWorker;
+			}
 		}
+    	
+    	attack(playerUnit, closestEnemy);
     }
     // __END OF UNIT CONTROLLERS__
     
