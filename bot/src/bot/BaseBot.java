@@ -27,7 +27,7 @@ import rts.UnitAction;
  *
  * @author newtoto
  */
-public class ShowMeWhatYouBot extends AbstractionLayerAI {
+public class BaseBot extends AbstractionLayerAI {
 	
 	Random r = new Random();
 	protected UnitTypeTable utt;
@@ -41,11 +41,11 @@ public class ShowMeWhatYouBot extends AbstractionLayerAI {
 	UnitType lightType;
 	UnitType heavyType;
 	
-    public ShowMeWhatYouBot(UnitTypeTable a_utt) {
+    public BaseBot(UnitTypeTable a_utt) {
     	this(a_utt, new AStarPathFinding());
     }
     
-    public ShowMeWhatYouBot(UnitTypeTable utt, AStarPathFinding aStarPathFinding) {
+    public BaseBot(UnitTypeTable utt, AStarPathFinding aStarPathFinding) {
     	super(aStarPathFinding);
     	reset(utt);
     }
@@ -147,13 +147,13 @@ public class ShowMeWhatYouBot extends AbstractionLayerAI {
         WorkerController(workers, resources, bases, gameInfo, enoughWorkers);
         
         // Control light units
-        PrioritiseWorkers(light, enemyUnits);
+        PrioritiseBases(light, enemyUnits);
         
         // Control heavy units
-        PrioritiseWorkers(heavy, enemyUnits);
+        PrioritiseBases(heavy, enemyUnits);
         
         // Control ranged units
-        PrioritiseWorkers(ranged, enemyUnits);
+        PrioritiseBases(ranged, enemyUnits);
         
         return translateActions(playerNumber, gameState);
     }
