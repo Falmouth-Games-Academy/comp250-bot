@@ -161,10 +161,10 @@ public class ShowMeWhatYouBot extends AbstractionLayerAI {
         PrioritiseWorkers(light, enemyUnits);
         
         // Control heavy units
-        PrioritiseWorkers(heavy, enemyUnits);
+        PrioritiseBases(heavy, enemyUnits);
         
         // Control ranged units
-        PrioritiseWorkers(ranged, enemyUnits);
+        PrioritiseHeavy(ranged, enemyUnits);
         
         return translateActions(playerNumber, gameState);
     }
@@ -308,15 +308,15 @@ public class ShowMeWhatYouBot extends AbstractionLayerAI {
     	int targetNumberOfRanged = 2;
     	
     	// Check if there are enough ranged units
-    	if(numberOfRanged < targetNumberOfRanged)
-    	{
+    	//if(numberOfRanged < targetNumberOfRanged)
+    	//{
     		train(barracks.get(0), rangedType);
-    	} 
-    	else 
-    	{
+    	//} 
+    	//else 
+    	//{
     		// Train light units
-    		train(barracks.get(0), lightType);
-    	}
+    		//train(barracks.get(0), lightType);
+    	//}
     	
     	
     	//System.out.println(totalFarmableResourcesNumber);
@@ -426,6 +426,50 @@ public class ShowMeWhatYouBot extends AbstractionLayerAI {
     		else if(enemyUnits.get("heavy").size() != 0)
     		{
     			AttackNearest(unit, enemyUnits.get("heavy"));
+    		}
+    		else if(enemyUnits.get("ranged").size() != 0)
+    		{
+    			AttackNearest(unit, enemyUnits.get("ranged"));
+    		}
+    		else if(enemyUnits.get("barracks").size() != 0)
+    		{
+    			AttackNearest(unit, enemyUnits.get("barracks"));
+    		}
+		}
+    }
+	
+	// Attack heavies first
+    public void PrioritiseHeavy(List<Unit> unitGroup, Map <String, List<Unit>> enemyUnits)
+    {
+    	// Return if no light units in list
+    	if(unitGroup.isEmpty())
+    	{
+    		return;
+    	}
+    	
+    	// What to attack
+    	//Unit target = null;
+    	
+    	
+    	// Go through all light units
+    	for(Unit unit : unitGroup)
+		{
+    		// Priority of which units to attack
+    		if(enemyUnits.get("heavy").size() != 0)
+    		{
+    			AttackNearest(unit, enemyUnits.get("heavy"));
+    		}
+			else if(enemyUnits.get("workers").size() != 0)
+    		{
+    			AttackNearest(unit, enemyUnits.get("workers"));
+    		}
+    		else if(enemyUnits.get("bases").size() != 0)
+    		{
+    			AttackNearest(unit, enemyUnits.get("bases"));
+    		}
+    		else if(enemyUnits.get("light").size() != 0)
+    		{
+    			AttackNearest(unit, enemyUnits.get("light"));
     		}
     		else if(enemyUnits.get("ranged").size() != 0)
     		{
