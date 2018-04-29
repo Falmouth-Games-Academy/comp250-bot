@@ -37,7 +37,7 @@ public class Lacplesis extends AbstractionLayerAI {
     int basePosX;
     int basePosY;
     boolean workerDefend = true;
-    boolean inPos=false;
+    boolean buildingBarracks=false;
     int workersSize= 5;
     
     //List all my Units
@@ -267,6 +267,7 @@ public class Lacplesis extends AbstractionLayerAI {
             if (u2.getType() == barracksType
                     && u2.getPlayer() == p.getID()) {
                 nbarracks++;
+
             }
         }
 
@@ -286,7 +287,7 @@ public class Lacplesis extends AbstractionLayerAI {
         if (nbarracks == 0 && !workers.isEmpty()) {
             // build a barracks:
             if (p.getResources() >= barracksType.cost+ 3 + resourcesUsed) {
-                Unit u = workers.remove(1);
+                Unit u = workers.get(1);
                 int brPosX = basePosX-1;
                 int brPosY = basePosY+2;
                 //If player to build barracks in opposite corner
@@ -310,37 +311,44 @@ public class Lacplesis extends AbstractionLayerAI {
         
         for (Unit u : workers) {
         	if(harvesterCount<2) {
-        		harvesterCount++;
-        		
-        		Unit closestBase = null;
-        		Unit closestResource = null;
-        		int closestDistance = 0;
-        		for (Unit u2 : pgs.getUnits()) {
-        			if (u2.getType().isResource) {
-        				int d = Math.abs(u2.getX() - u.getX()) + Math.abs(u2.getY() - u.getY());
-        				if (closestResource == null || d < closestDistance) {
-        					closestResource = u2;
-        					closestDistance = d;
+        		if(harvesterCount==1 && p.getResources() >= barracksType.cost+ 3) {
+        			buildingBarracks=true;
+        			harvesterCount++;
+        		}
+        		else {
+        			harvesterCount++;
+
+
+        			Unit closestBase = null;
+        			Unit closestResource = null;
+        			int closestDistance = 0;
+        			for (Unit u2 : pgs.getUnits()) {
+        				if (u2.getType().isResource) {
+        					int d = Math.abs(u2.getX() - u.getX()) + Math.abs(u2.getY() - u.getY());
+        					if (closestResource == null || d < closestDistance) {
+        						closestResource = u2;
+        						closestDistance = d;
+        					}
         				}
         			}
-        		}
-        		closestDistance = 0;
-        		for (Unit u2 : pgs.getUnits()) {
-        			if (u2.getType().isStockpile && u2.getPlayer()==p.getID()) {
-        				int d = Math.abs(u2.getX() - u.getX()) + Math.abs(u2.getY() - u.getY());
-        				if (closestBase == null || d < closestDistance) {
-        					closestBase = u2;
-        					closestDistance = d;
+        			closestDistance = 0;
+        			for (Unit u2 : pgs.getUnits()) {
+        				if (u2.getType().isStockpile && u2.getPlayer()==p.getID()) {
+        					int d = Math.abs(u2.getX() - u.getX()) + Math.abs(u2.getY() - u.getY());
+        					if (closestBase == null || d < closestDistance) {
+        						closestBase = u2;
+        						closestDistance = d;
+        					}
         				}
         			}
-        		}
-        		if (closestResource != null && closestBase != null) {
-        			AbstractAction aa = getAbstractAction(u);
-        			if (aa instanceof Harvest) {
-        				Harvest h_aa = (Harvest)aa;
-        				if (h_aa.getTarget() != closestResource || h_aa.getBase()!=closestBase) harvest(u, closestResource, closestBase);
-        			} else {
-        				harvest(u, closestResource, closestBase);
+        			if (closestResource != null && closestBase != null) {
+        				AbstractAction aa = getAbstractAction(u);
+        				if (aa instanceof Harvest) {
+        					Harvest h_aa = (Harvest)aa;
+        					if (h_aa.getTarget() != closestResource || h_aa.getBase()!=closestBase) harvest(u, closestResource, closestBase);
+        				} else {
+        					harvest(u, closestResource, closestBase);
+        				}
         			}
         		}
         	}
