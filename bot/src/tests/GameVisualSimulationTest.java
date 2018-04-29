@@ -46,7 +46,7 @@ public class GameVisualSimulationTest {
         
         //AI ai1 = new WorkerRush(utt, new BFSPathFinding());
         AI ai1 = new JarJarBinks(utt); //TheDestroyer(utt, MAXCYCLES);
-        AI ai2 = new HeavyRush(utt);
+        AI ai2 = new WorkerRush(utt);
 
         JFrame w = PhysicalGameStatePanel.newVisualizer(gs,640,640,false,PhysicalGameStatePanel.COLORSCHEME_BLACK);
 //        JFrame w = PhysicalGameStatePanel.newVisualizer(gs,640,640,false,PhysicalGameStatePanel.COLORSCHEME_WHITE);
