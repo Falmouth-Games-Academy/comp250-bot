@@ -40,29 +40,16 @@ public class JarJarBinks extends AbstractionLayerAI {
     UnitType heavyType;
     UnitType lightType;
     UnitType rangedType;
-    
-    int lightCount;
-    int heavyCount;
-    int unitCount;
-    
-    
+         
     Unit enemyBase = null;
 	Unit Base = null;
-   // int basePosX;
-   // int basePosY;
     
-    int enemyWorkers = 0;
-    
+    int enemyWorkers = 0;    
     int mapSize = 0;
     
+    // Player and Enemy rating based on units e.g Heavy = 4 points and worker = 1 point
     int atkRating = 0;
     int enemyAtkRating = 0;
-
-    // Strategy implemented by this class:
-    // If we have any "heavy": send it to attack to the nearest enemy unit
-    // If we have a base: train worker until we have 1 workers
-    // If we have a barracks: train heavy and light
-    // If we have a worker: do this if needed: build base, build barracks, harvest resources
 
     public JarJarBinks(UnitTypeTable a_utt) {
         this(a_utt, new GreedyPathFinding());
@@ -72,8 +59,6 @@ public class JarJarBinks extends AbstractionLayerAI {
   // new GreedyPathFinding());
  // new FloodFillPathFinding());
     // new BFSPathFinding());
-
-
     
     public JarJarBinks(UnitTypeTable a_utt, PathFinding a_pf) {
         super(a_pf);
@@ -111,23 +96,18 @@ public class JarJarBinks extends AbstractionLayerAI {
     public PlayerAction getAction(int player, GameState gs) {
         PhysicalGameState pgs = gs.getPhysicalGameState();
         Player p = gs.getPlayer(player);
-//        System.out.println("HeavyRushAI for player " + player + " (cycle " + gs.getTime() + ")");   
         
-         CheckBasePositions(p, gs);
+        CheckBasePositions(p, gs);
         
         mapSize = pgs.getWidth() * pgs.getHeight();
         
         if (mapSize == 144) { enemyWorkers = 1; }
         else { enemyWorkers = 2; }
         
-        //System.out.println("enemy " + enemyRating(player, gs));
-        //System.out.println("me " + playerRating(player, gs));
-        
         // Update Ratings
         enemyAtkRating = enemyRating(player, gs);
         atkRating = playerRating(player, gs);
-        
-        
+                
         
         // behavior of bases:
         for (Unit u : pgs.getUnits()) {
@@ -171,13 +151,15 @@ public class JarJarBinks extends AbstractionLayerAI {
         
     }
     
+    
+    /* Calculates the enemy rating based on the units that the enemy currently has */
     public int enemyRating(int player, GameState gs) {
     	
     	int rating = 0;
     	int workers = 0;
     	
-    	 PhysicalGameState pgs = gs.getPhysicalGameState();
-         Player p = gs.getPlayer(player);
+    	PhysicalGameState pgs = gs.getPhysicalGameState();
+        Player p = gs.getPlayer(player);
          
     	// Check enemies
         for(Unit unit:pgs.getUnits()) {
@@ -187,7 +169,6 @@ public class JarJarBinks extends AbstractionLayerAI {
             	{
             		rating ++;
             		workers++;
-            		//System.out.println("enRat = " + enemyRating);
             	}
             	else if (unit.getType() == lightType)
             	{
@@ -203,8 +184,15 @@ public class JarJarBinks extends AbstractionLayerAI {
             	}
             }
         }
+        
+        
+        /* If map is not NoWhereToRun then set enemyWorkers to the No. of workers they have + 1 
+         * enemyWorkers is used to determine how many workers the player spawns, to avoid a worker rush. 
+         * On NoWhereToRun it isn't necessary as there is a wall of resources.
+         */
         if (mapSize != 72)
         {
+        	// Very large maps also don't need defence against a worker rush
         	if(mapSize == 576)
         	{
         		enemyWorkers = 3;
@@ -220,12 +208,13 @@ public class JarJarBinks extends AbstractionLayerAI {
     	return rating;
     }
     
+    /* Calculates the player rating based on the units that the enemy currently has */
     public int playerRating(int player, GameState gs) {
     	
     	int rating = 0;
     	
-    	 PhysicalGameState pgs = gs.getPhysicalGameState();
-         Player p = gs.getPlayer(player);
+    	PhysicalGameState pgs = gs.getPhysicalGameState();
+        Player p = gs.getPlayer(player);
     	
     	// Check enemies
         for(Unit unit:pgs.getUnits()) {
@@ -265,27 +254,14 @@ public class JarJarBinks extends AbstractionLayerAI {
             }
         }
         
-        
-        if (p.getResources() >= workerType.cost && nworkers < enemyWorkers) { // nworkers <= unitCount/3 &&  // nworkers <= atkRating/3 && 
+        // If we have less than or equal to the number of workers the enemey has, spawn a worker.
+        if (p.getResources() >= workerType.cost && nworkers < enemyWorkers) {
             train(u, workerType);
-            // System.out.println("workers = " + enemyWorkers);
         }
     }
 
     public void barracksBehavior(Unit u, Player p, PhysicalGameState pgs)
     {
-    	 /* if (p.getResources() >= lightType.cost && lightCount <= heavyCount) 
- 	    {
- 	        train(u, lightType);
- 	        lightCount++;
- 	        unitCount++;
- 	    }
- 	    else if (p.getResources() >= heavyType.cost)
- 	    {
- 	    	train(u, heavyType);
- 	    	heavyCount++;
- 	    	unitCount++;
- 	    } */
     	 if (p.getResources() >= rangedType.cost) 
   	    {
   	        train(u, rangedType);
@@ -294,11 +270,6 @@ public class JarJarBinks extends AbstractionLayerAI {
     }
 
     public void meleeUnitBehavior(Unit u, Player p, GameState gs) {
-        
-    	//Unit enemyBase = null;
-    	//Unit Base = null;
-    	
-    	
     	PhysicalGameState pgs = gs.getPhysicalGameState();
         Unit closestEnemy = null;
         int closestDistance = 0;
@@ -324,19 +295,22 @@ public class JarJarBinks extends AbstractionLayerAI {
 	        	}
 	    }
 
-        
-        if (closestDistance < 4 || atkRating > (enemyAtkRating + 5) || p.getResources() == 0) { // closestEnemy != null
-//            System.out.println("HeavyRushAI.meleeUnitBehavior: " + u + " attacks " + closestEnemy);
+        /* Only attack the enemy if they come close
+         * Rush the enemy if our rating is 5 or more than theirs (if we have a larger army)
+         */
+        if (closestDistance < 4 || atkRating > (enemyAtkRating + 5) || p.getResources() == 0) {
             attack(u, closestEnemy);
         }
-        else if (Base != null && enemyBase != null)// if (u.getY() < 7)
+        else if (Base != null && enemyBase != null)
         {
         	// Random number between -1 and 3
         	int RanX = ThreadLocalRandom.current().nextInt(-1,4);
-        	// if player base is on left side 
+        	// Checks the side of the map the base is on to determine where to position units
         	if (Base.getX() < enemyBase.getX())
 			{
-        		// if the 
+        		/* 
+        		 * Surrounds the base with units using random ranges
+        		 */
         		if (RanX > 2)
         		{
         			move(u, ( Base.getX() + RanX), Base.getY() + 
@@ -350,6 +324,9 @@ public class JarJarBinks extends AbstractionLayerAI {
 			}
 			else
 			{
+				/* 
+        		 * Surrounds the base with units using random ranges
+        		 */
 				if (RanX > 2)
         		{
         			move(u, ( Base.getX() - RanX), Base.getY() - 
@@ -372,24 +349,27 @@ public class JarJarBinks extends AbstractionLayerAI {
         int maxResourceWorkers = 2;
         int resourceWorkers = 0;
 
+        // If the map is NoWhereToRun limit the number of resourceWorkers to 2
         if (mapSize == 72){ maxResourceWorkers = 2;}
+        // else if the map is 12x12 or smaller have 1 resource worker
         else if (mapSize != 72 && mapSize <= 144)
         {
         	maxResourceWorkers = 1;
         }
         
         int resourcesUsed = 0;
+        
+        // Create lists for the resource workers and defence/rush workers
         List<Unit> freeWorkers = new LinkedList<Unit>();
         List<Unit> defenceWorkers = new LinkedList<Unit>();
-        //freeWorkers.addAll(workers);
         
+        // Assign Workers
         for (Unit u : workers)
         {
         	if (resourceWorkers < maxResourceWorkers)
         	{
         		freeWorkers.add(u);
         		resourceWorkers++;
-        		//System.out.println("workers = " + resourceWorkers);
         	}
         	else
         	{
@@ -398,6 +378,9 @@ public class JarJarBinks extends AbstractionLayerAI {
         	}
         }
         
+        /* If we run out of resources make all of the resource workers defence workers
+         * This provides an advantage late game on small maps
+         */
         if (p.getResources() == 0)
         {
         	for (Unit u : freeWorkers)
@@ -446,6 +429,7 @@ public class JarJarBinks extends AbstractionLayerAI {
             // build a barracks:
             if (p.getResources() >= barracksType.cost + resourcesUsed && !freeWorkers.isEmpty()) {
                 Unit u = freeWorkers.remove(0);
+                // Build the barracks in better place
                 if (mapSize != 72)
                 {
                 	if (u.getPlayer() == 0)
@@ -513,9 +497,6 @@ public class JarJarBinks extends AbstractionLayerAI {
     
     public void workerUnitDefence(Unit u, Player p, GameState gs) {    	
     	
-    	//Unit enemyBase = null;
-    	//Unit Base = null;
-    	
     	PhysicalGameState pgs = gs.getPhysicalGameState();
         Unit closestEnemy = null;
         int closestDistance = 0;
@@ -531,13 +512,11 @@ public class JarJarBinks extends AbstractionLayerAI {
        
         CheckBasePositions(p,gs);
         
-       /* if (closestEnemy!=null) 
-        {
-            attack(u,closestEnemy);
-        }*/
-        
         System.out.println(enemyWorkers);
         
+        /* Defence strategy against workers rushing 
+         * 
+         */
         if (closestDistance <= 6 || (enemyWorkers < 4 && mapSize <= 144) || p.getResources() == 0) 
         {
 	        if (closestEnemy!=null) 
@@ -547,14 +526,16 @@ public class JarJarBinks extends AbstractionLayerAI {
         }
         else if (Base != null && enemyBase != null)// if (u.getY() < 7)
         {
+        	// Special random numbers
         	int RanY = ThreadLocalRandom.current().nextInt(-1,3);
         	int RanY2 = ThreadLocalRandom.current().nextInt(3,5);
-        	// Random number between -1 and 3
         	int RanX = ThreadLocalRandom.current().nextInt(0,5);
-        	// if player base is on left side 
+        	// Checks which side our base is 
         	if (Base.getX() < enemyBase.getX())
 			{
-        		// if the 
+        		/* 
+        		 * Surrounds the base with workers using random ranges
+        		 */
         		if (RanX > 1)
         		{
         			move(u, ( Base.getX() + RanX), Base.getY() + 
@@ -568,6 +549,9 @@ public class JarJarBinks extends AbstractionLayerAI {
 			}
 			else
 			{
+				/* 
+        		 * Surrounds the base with workers using random ranges
+        		 */
 				if (RanX > 1)
         		{
         			move(u, ( Base.getX() - RanX), Base.getY() - 
@@ -582,9 +566,9 @@ public class JarJarBinks extends AbstractionLayerAI {
         }
     }
     
+    // Checks the positions of each base
     public void CheckBasePositions(Player p,GameState gs)
     {
-    	//Unit baseUnit = null;
     	
     	PhysicalGameState pgs = gs.getPhysicalGameState();
     	
@@ -604,26 +588,6 @@ public class JarJarBinks extends AbstractionLayerAI {
         		enemyBase = bUnit;
         	}
         }
-        
-       // return baseUnit;
-    }
-    
-    public Unit CheckEnemyBasePosition(Player p,GameState gs)
-    {
-    	Unit baseUnit = null;
-    	
-    	PhysicalGameState pgs = gs.getPhysicalGameState();
-    	
-        for (Unit bUnit:pgs.getUnits()) 
-        {
-        	if (bUnit.getType()==baseType && 
-        		bUnit.getPlayer() == p.getID()) 
-        	{
-        		baseUnit = bUnit;
-        	}
-        }
-        
-        return baseUnit;
     }
 
 
