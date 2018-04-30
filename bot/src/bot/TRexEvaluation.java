@@ -17,6 +17,13 @@ import rts.units.UnitTypeTable;
  * @author Stomps
  */
 
+/*
+ * A set of weights and values that when applied to a gameState will result in a grading for that gameState based on the player values passed in.
+ * 
+ * @param maxPlayer The player for which the evaluation function will return a higher score if the gameState is favourable to that player.
+ * @param minPlayer The player for which the evaluation function will return a lower score if the gameState is favourable to that player.
+ */
+
 public class TRexEvaluation extends EvaluationFunction
 {   
 	// Value of the player's resource in base

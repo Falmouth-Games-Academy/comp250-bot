@@ -21,6 +21,8 @@ import util.Pair;
 /**
  *
  * @author Stomps
+ * 
+ * The Node class which contains the information about that leaf of the tree.
  */
 
 public class Node

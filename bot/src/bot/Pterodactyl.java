@@ -169,8 +169,8 @@ class PteroNode
 }
 
 
-// The AI class
-public class Pterodactyl extends AI//WithComputationBudget implements InterruptibleAI
+/// The AI class. Initialises all values to be used by the getAction function.
+public class Pterodactyl extends AI
 {
 	// Game evaluation function that returns a value based on units and resources available
     EvaluationFunction EVALUATION_FUNCTION = new SimpleSqrtEvaluationFunction3();

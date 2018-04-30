@@ -19,7 +19,11 @@ import util.Pair;
 /**
  *
  * @author Stomps
+ * 
+ * Used to analyse a gameState or a playerAction
+ * 
  */
+
 
 // Class holds the playerAction with it's analysed score for easy adding to a sorted set
 class ActionInfo implements Comparable<Object>
@@ -77,6 +81,7 @@ public class Analysis
 
 /*------------------------------------------------------------------------*/   
     
+    // Constructor
     public Analysis(int playerNumber, GameState gameState, int halfMapDistance, UnitType baseType, UnitType workerType) throws Exception
 	{
 		m_HalfMapDistance = halfMapDistance;
@@ -86,6 +91,7 @@ public class Analysis
 		m_PlayerNumber = playerNumber;
 	}
     
+    // Sets the weighting values used to analyse a playerAction so that the weightings can be changed throughout the game
     public void setAnalysisWeightings(int harvestWeight, int moveToHarvestWeight, int attackWeight, int moveToAttackWeight, int produceWeight, int attackDistance)
     {
     	m_HarvestWeight = harvestWeight;
@@ -96,6 +102,7 @@ public class Analysis
     	m_AttackDistance = attackDistance;
     }
 	
+    // Populates the classes fields that will affect the analysis of a playerAction
 	void analyseGameState()
 	{
 		m_FriendlyCount = 0;
@@ -141,8 +148,10 @@ public class Analysis
     	}
 	}
 	
+	// Analyses each playerAction in an action generator, scoring it based on the weightings set, and returns a sorted set compared by the analysis score
     public SortedSet<ActionInfo> AnalyseAndSortActionSpace(MyPlayerActionGenerator actionGenerator, GameState gameState, long cutOffTime) throws Exception
     {
+    	// Sore the arguments passed in
     	MyPlayerActionGenerator thisActionGenerator = actionGenerator;
     	int playerActionScore;
     	
@@ -183,6 +192,7 @@ public class Analysis
 		return sortedActionList;
     }
 	
+    // Analyses an individual Unit action for a Unit
     public int analyseAction(Unit unit, UnitAction unitAction, long cutOffTime)
     {
     	// Zero the initial score
