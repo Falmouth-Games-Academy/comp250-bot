@@ -23,6 +23,7 @@ import java.util.concurrent.ThreadLocalRandom;
  * @author Steve :) 
  */
 public class ScotlandIsntNumberOne extends AbstractionLayerAI {
+	//Setting up variables I'll need
 	Random r = new Random();
     protected UnitTypeTable utt;
     UnitType workerType;
@@ -43,6 +44,7 @@ public class ScotlandIsntNumberOne extends AbstractionLayerAI {
 
     public ScotlandIsntNumberOne(UnitTypeTable a_utt) 
     {
+    	//Uses AStarPathFinding
         this(a_utt, new AStarPathFinding());
     }
     
@@ -60,6 +62,7 @@ public class ScotlandIsntNumberOne extends AbstractionLayerAI {
     
     public void reset(UnitTypeTable a_utt)  
     {
+    	//Assigning units to variables
         utt = a_utt;
         workerType = utt.getUnitType("Worker");
         baseType = utt.getUnitType("Base");
@@ -74,12 +77,17 @@ public class ScotlandIsntNumberOne extends AbstractionLayerAI {
     }
 
 //Main Function Of The Game
+    //Alternate between making light and heavy units
+    //Has them patrol base until in attacking distance
+    //If resources in base too little send every soldier to attack
+    //If resources left in map are too small, send workers to attack
+    //If barracks or base == 0 build them
     public PlayerAction getAction(int player, GameState gs)
     {
         PhysicalGameState pgs = gs.getPhysicalGameState();
         Player p = gs.getPlayer(player);   
         
-        //Gets size of the map
+        //Gets size of the map so I can base worker behaviour on this
         mapSize = pgs.getWidth() * pgs.getHeight();
         
         for (Unit bUnit:pgs.getUnits()) 
@@ -141,6 +149,7 @@ public class ScotlandIsntNumberOne extends AbstractionLayerAI {
         
     }
 
+    //Builds workers based on size on map
     public void baseBehavior(Unit u, Player p, PhysicalGameState pgs) 
     {
         int nworkers = 0;
@@ -162,6 +171,7 @@ public class ScotlandIsntNumberOne extends AbstractionLayerAI {
         }
     }
 
+    //Alternates between building heavy and ranged units
     public void barracksBehavior(Unit u, Player p, PhysicalGameState pgs)
     {
     	 if (p.getResources() >= rangedType.cost && rangedCount < heavyCount) 
@@ -189,6 +199,7 @@ public class ScotlandIsntNumberOne extends AbstractionLayerAI {
     	PhysicalGameState pgs = gs.getPhysicalGameState();
         Unit closestEnemy = null;
         int closestDistance = 0;
+        //Finds closestDistance to enemies
         for (Unit u2 : pgs.getUnits())
         {
             if (u2.getPlayer() >= 0 && u2.getPlayer() != p.getID()) 
@@ -217,12 +228,17 @@ public class ScotlandIsntNumberOne extends AbstractionLayerAI {
 	        	}
 
         
-	        	
+	   //If enemy has no base, attack closest enemy     	
 	    if (enemyBase == null)
 	    {
 	    	attack(u, closestEnemy);
 	    }
-	        	
+	    
+	    //When we have <=5 resources in base
+	    //send out every melee unit to attack at once
+	    //like a swarm
+	    //or if they get too close to base
+	    //else have them patrol random coordinate in random range    	
 	    if (p.getResources() <= 5)
 	    {
 	    	attack(u, enemyBase);
@@ -267,6 +283,10 @@ public class ScotlandIsntNumberOne extends AbstractionLayerAI {
         	
     }
 
+    //Behaviour of workers
+    //Based on map size it should limit no. of workers
+    //One worker should attack on smaller maps
+    //Others should harvest
     public void workersBehavior(List<Unit> workers, Player p, GameState gs) {
     	PhysicalGameState pgs = gs.getPhysicalGameState();
         int nbases = 0;
@@ -285,6 +305,8 @@ public class ScotlandIsntNumberOne extends AbstractionLayerAI {
         	maxHarvestingWorkers = 1;
         }
         
+        //if no resources are left add every worker
+        //to attacker list and attack
         if (p.getResources() == 0)
         {
         	for (Unit u : workers)
@@ -294,7 +316,8 @@ public class ScotlandIsntNumberOne extends AbstractionLayerAI {
         	}
         }
         	
-
+        //checks to see if we have reached maxHarvestingWorkers
+        //else add to attackingWorkers list
         for (Unit u : workers)
         {
         	if (harvestingWorkers < maxHarvestingWorkers)
@@ -343,7 +366,7 @@ public class ScotlandIsntNumberOne extends AbstractionLayerAI {
         
         if (nbarracks == 0) 
         {
-            // build a barracks:
+            // build a barracks based on base position::
             if (p.getResources() >= barracksType.cost + resourcesUsed && !freeWorkers.isEmpty()) 
             {
                 Unit u = freeWorkers.remove(0);
@@ -361,6 +384,8 @@ public class ScotlandIsntNumberOne extends AbstractionLayerAI {
             }
         }
         
+        //For every unit in attackingworkers make them do
+        //workerunitdefence which sends them to attack
         for (Unit unit : attackingWorkers) 
         {
         	workerUnitDefence(unit, p, gs);
@@ -414,7 +439,9 @@ public class ScotlandIsntNumberOne extends AbstractionLayerAI {
         }
     }
 
-
+    //Gets closest enemy same as above
+    //Allows worker to use it
+    //Workers attack if enemies close enough
 public void workerUnitDefence(Unit u, Player p, GameState gs) {    	
 
 		Unit enemyBase = null;
@@ -445,7 +472,7 @@ public void workerUnitDefence(Unit u, Player p, GameState gs) {
     	        	}
     	        	}
     	        
-    	        
+    	        //sends worker in attacking list to attack when close enough
     	        if (closestDistance <= 7) 
     	        {
     	        	attack(u,closestEnemy); 

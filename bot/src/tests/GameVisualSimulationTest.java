@@ -35,9 +35,9 @@ public class GameVisualSimulationTest {
         int PERIOD = 20;
         boolean gameover = false;
         
-        //AI ai1 = new WorkerRush(utt, new BFSPathFinding());
-        AI ai1 = new ScotlandIsntNumberOne(utt);
-        AI ai2 = new ScotlandNumberOne(utt);
+        AI ai1 = new WorkerRush(utt, new BFSPathFinding());
+        AI ai2 = new ScotlandIsntNumberOne(utt);
+        //AI ai2 = new ScotlandNumberOne(utt);
 
         JFrame w = PhysicalGameStatePanel.newVisualizer(gs,640,640,false,PhysicalGameStatePanel.COLORSCHEME_BLACK);
 //        JFrame w = PhysicalGameStatePanel.newVisualizer(gs,640,640,false,PhysicalGameStatePanel.COLORSCHEME_WHITE);
