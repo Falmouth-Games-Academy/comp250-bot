@@ -129,8 +129,6 @@ public class MyPlayerActionGenerator {
 
     
     public PlayerAction getNextAction(long cutOffTime) throws Exception {
-        int count = 0;
-        int count2 = 0;
         while(moreActions) {
             boolean consistent = true;
             PlayerAction pa = new PlayerAction();
@@ -146,7 +144,6 @@ public class MyPlayerActionGenerator {
                     lastAction = null;
             		return null;
             	}
-            	count++;
             	
                 i--;
                 Pair<Unit,List<UnitAction>> unitChoices = choices.get(i);
@@ -172,12 +169,12 @@ public class MyPlayerActionGenerator {
                 return pa;
             }
             
-            // check if we are over time (only check once every 1000 actions, since currenttimeMillis is a slow call):
+            // Original comment: check if we are over time (only check once every 1000 actions, since currenttimeMillis is a slow call):
+            // This is now tweaked
             if (/*cutOffTime>0 && (count2%3==0) &&*/ System.currentTimeMillis() > cutOffTime) {
                 lastAction = null;
                 return null;
             }
-            count2++;
         }
         lastAction = null;
         return null;

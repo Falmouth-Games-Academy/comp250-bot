@@ -38,11 +38,10 @@ import rts.units.UnitTypeTable;
 
 class PteroNode
 {
-	// C needs a lot of tweaking
     private float C = 0.05f;
-    private PteroNode m_Parent;// = null;
+    private PteroNode m_Parent;
     private GameState m_GameState;
-    private int m_CurrentTreeDepth;// = 0;
+    private int m_CurrentTreeDepth;
     
     private boolean m_HasUnexploredActions = true;
     private PlayerActionGenerator m_ActionGenerator = null;
@@ -176,19 +175,17 @@ public class Pterodactyl extends AI//WithComputationBudget implements Interrupti
 	// Game evaluation function that returns a value based on units and resources available
     EvaluationFunction EVALUATION_FUNCTION = new SimpleSqrtEvaluationFunction3();
     
-    // Simulations require an opponent to play out against, RandomBiasedAI is a slightly stronger opponent than RandomAI, Or maybe choose stronger?
-    //Brontosaurus simulationEnemyAI;
+    // Simulations require an opponent to play out against
     AI simulationEnemyAI = new RandomBiasedAI();
     
-    // 
     GameState initialGameState = null;
     PteroNode tree = null;
     
     // The time allowance that is given to the main loop before breaking and finding the best found child
-    int MAXSIMULATIONTIME = 100;//1024; // 100?
+    int MAXSIMULATIONTIME = 100;
     
     // The look ahead depth allowance of nodes in the tree
-    int MAX_TREE_DEPTH; //10;
+    int MAX_TREE_DEPTH;
     
     // The 0 or 1 identifier number of this player
     int playerNumber;
@@ -227,10 +224,6 @@ public class Pterodactyl extends AI//WithComputationBudget implements Interrupti
     {
     	// 
         if (!gameState.canExecuteAnyAction(player)) return new PlayerAction();
-        
-        // Simulate against the best heuristic quick time algorithm possible / available
-//        simulationEnemyAI = new Brontosaurus(unitTypeTable);
-        
         
         // Used to estimate the look ahead max tree depth heuristic
         PhysicalGameState physicalGameState = gameState.getPhysicalGameState();

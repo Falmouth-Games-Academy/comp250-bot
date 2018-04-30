@@ -41,6 +41,7 @@ public class TRexEvaluation extends EvaluationFunction
     
     public TRexEvaluation(UnitTypeTable unitTypeTable)
     {
+    	// Set the Unit type variables from the unitTypeTable
     	m_WorkerType = unitTypeTable.getUnitType("Worker");
         m_BaseType = unitTypeTable.getUnitType("Base");
         m_BarracksType = unitTypeTable.getUnitType("Barracks");
@@ -53,43 +54,41 @@ public class TRexEvaluation extends EvaluationFunction
         float score1 = baseScore(maxplayer, gs);
         float score2 = baseScore(minplayer, gs);
         
+        // Check for dividing by zero
         if (score1 + score2 == 0) return 0.5f;
         return (2 * score1 / (score1 + score2)) - 1;
     }
     
     public float baseScore(int player, GameState gameState)
     {
-        PhysicalGameState physicalGameState = gameState.getPhysicalGameState();
-        
         // Initialise score float with player resource value
         float score = gameState.getPlayer(player).getResources() * RESOURCE_VALUE;
         
         boolean playerHasUnits = false;
-        for(Unit unit : gameState.getUnits())// physicalGameState.getUnits())
+        for(Unit unit : gameState.getUnits())
         {
             if (unit.getPlayer() == player) 
             {
                 playerHasUnits = true;
+                
+                // Accumulate score based on number of units
                 score += unit.getResources() * RESOURCE_IN_WORKER;
                 score += UNIT_BONUS_MULTIPLIER * unit.getCost() * Math.sqrt(unit.getHitPoints() / unit.getMaxHitPoints());
- /*               
-                if (unit.getType() == m_WorkerType)
-                {
-                	if (unit. == UnitAction.TYPE_HARVEST || gameState.getUnitAction(unit) == 3) score += BASE_VALUE * unit.getCost() * Math.sqrt(unit.getHitPoints() / unit.getMaxHitPoints());
-                	else if (gameState.getUnitAction(unit) == 4) score += BASE_VALUE * unit.getCost() * Math.sqrt(unit.getHitPoints() / unit.getMaxHitPoints());
-                }
- */               
+              
+                // accumulate score based on the unit type and the value given to it
                 if 		(unit.getType() == m_BaseType) 		score += BASE_VALUE 	* unit.getCost() * Math.sqrt(unit.getHitPoints() / unit.getMaxHitPoints());
 	            else if (unit.getType() == m_BarracksType)	score += BARRACKS_VALUE	* unit.getCost() * Math.sqrt(unit.getHitPoints() / unit.getMaxHitPoints());
                 else if (unit.getType() == m_RangedType)	score += RANGED_VALUE	* unit.getCost() * Math.sqrt(unit.getHitPoints() / unit.getMaxHitPoints());
 	            else if (unit.getType() == m_LightType)		score += LIGHT_VALUE	* unit.getCost() * Math.sqrt(unit.getHitPoints() / unit.getMaxHitPoints());
             }
+            // Give priority to weakening or destroying the enemy base
             else if (unit.getType() == m_BaseType)			score -= BASE_VALUE * 99 * unit.getCost() * Math.sqrt(unit.getHitPoints() / unit.getMaxHitPoints());
         }
         if (!playerHasUnits) return 0;
         return score;
     }    
     
+    // Not used but needed to extend EvaluationFunction
     public float upperBound(GameState gs)
     {
         return 1.0f;

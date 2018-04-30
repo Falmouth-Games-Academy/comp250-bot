@@ -6,8 +6,12 @@ package bot;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.SortedSet;
+import java.util.TreeSet;
+
 import rts.GameState;
 import rts.PlayerAction;
 import rts.PlayerActionGenerator;
@@ -21,7 +25,6 @@ import util.Pair;
 
 public class Node
 {
-	// C needs tweaking
     private float C = 0.05f;
     private Node m_Parent;
     private GameState m_GameState;
@@ -32,7 +35,7 @@ public class Node
     private double m_Score = 0;
     private int m_VisitCount = 0;
     private Map<Node, PlayerAction> m_ActionMap = new HashMap<Node, PlayerAction> ();
-    private List<Pair<PlayerAction, Float>> m_OrderedActionList = new ArrayList<Pair<PlayerAction, Float>>();
+    private SortedSet <ActionInfo> m_OrderedActionList = new TreeSet<>();
     private PlayerAction m_Action;
     private GameState m_SimulatedGameState;
     
@@ -41,6 +44,7 @@ public class Node
     private int m_MaxAmountOfNodeActionsToExamine = 30;
     
     private Analysis m_Analysis;
+    private Iterator<ActionInfo> m_SetIterator = m_OrderedActionList.iterator();
     
 /*------------------------------------------------------------------------*/    
     
@@ -76,8 +80,8 @@ public class Node
         if (m_GameState.winner() == -1 || !m_GameState.gameover())
         {
         	// Initialise and randomise the PlayerActionGenerator for this node based on the player number
-        	// This then analyses the m_ActionGenerator, systematically simulating and analysing the playerAction. This returns a list of playerActions ordered by how favourable
-        	// the Analysis has decided it is based on heuristics set in the opening of the getAction() being called
+        	// This then analyses the m_ActionGenerator, systematically analysing each playerAction. This returns a list of ActionInfos with a field of playerActions ordered by how favourable
+        	// the Analysis has decided the score field is based on heuristics set in the opening of the getAction() being called
 	        if (m_GameState.canExecuteAnyAction(maxPlayer))
 	        {
 	            m_ActionGenerator = new MyPlayerActionGenerator(gameState, maxPlayer);
@@ -104,16 +108,16 @@ public class Node
     public Node selectNewAction(int maxPlayer, int minPlayer, long endTime, int maxTreeDepth) throws Exception
     {
         // Do a depth check. This AI will explore up to a predefined depth as the end of the game is often too far away
-        if (m_CurrentTreeDepth >= maxTreeDepth/* || m_OrderedActionList.size() == 0*/) return this;
+        if (m_CurrentTreeDepth >= maxTreeDepth) return this;
         
 		// If no actions found
         if (m_ActionGenerator == null) return this;
         
-        // Check the iterator against the max allowed amount
-        if (m_CurrentActionIndex < m_MaxActionIndex)
+        // Check the iterator against the max allowed amount and that there is a next action. For Sorted sets with lenth < m_MaxAmountOfNodeActionsToExamine this should be handled with m_MaxActionIndex on construction so sanity check
+        if (m_SetIterator.hasNext() && m_CurrentActionIndex < m_MaxActionIndex)
         {
         	// Get the next action in the ordered list
-            m_Action = m_OrderedActionList.get(m_CurrentActionIndex).m_a;
+            m_Action = m_SetIterator.next().getPlayerAction();
             
             // increment the iterator
             m_CurrentActionIndex++;
@@ -135,6 +139,7 @@ public class Node
             
             return newChildNode;
         }
+        // else find the best child node with a UCB score check
         
         // Temporary variables
         Node tempBestNode = null;
@@ -160,9 +165,6 @@ public class Node
       
     public double UCBScore(Node child)
     {
-    	// Tweak the constant. Dynamic? How...
-    	//C = 0.0f;
-    	
     	return child.getScore()/child.getVisitCount() + C * Math.sqrt(2 * Math.log((double)child.getParent().getVisitCount())/child.getVisitCount());
     }
 }
